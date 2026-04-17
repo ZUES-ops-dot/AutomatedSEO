@@ -1,0 +1,268 @@
+[
+  {
+    "id": "rss-watch-run-1776113093780",
+    "connectorId": "rss-watch",
+    "provider": "rss",
+    "status": "success",
+    "startedAt": "2026-04-13T20:44:53.454Z",
+    "finishedAt": "2026-04-13T20:44:53.780Z",
+    "detail": "Stored 1 RSS items across 1 feeds.",
+    "recordCount": 1,
+    "metadata": {
+      "feedCount": 1
+    }
+  },
+  {
+    "id": "opportunity-engine-run-1775711217963",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-09T05:06:57.946Z",
+    "finishedAt": "2026-04-09T05:06:57.963Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775711217958",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-09T05:06:57.948Z",
+    "finishedAt": "2026-04-09T05:06:57.958Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775711217953",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-09T05:06:57.946Z",
+    "finishedAt": "2026-04-09T05:06:57.953Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775711217833",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-09T05:06:57.812Z",
+    "finishedAt": "2026-04-09T05:06:57.833Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775711217578",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-09T05:06:57.521Z",
+    "finishedAt": "2026-04-09T05:06:57.578Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775710916537",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-09T05:01:56.521Z",
+    "finishedAt": "2026-04-09T05:01:56.537Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775710916533",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-09T05:01:56.521Z",
+    "finishedAt": "2026-04-09T05:01:56.533Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775710916402",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-09T05:01:56.385Z",
+    "finishedAt": "2026-04-09T05:01:56.402Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775710916217",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-09T05:01:56.122Z",
+    "finishedAt": "2026-04-09T05:01:56.217Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775654302190",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T13:18:22.164Z",
+    "finishedAt": "2026-04-08T13:18:22.190Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775654302181",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T13:18:22.159Z",
+    "finishedAt": "2026-04-08T13:18:22.181Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775654301803",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T13:18:21.671Z",
+    "finishedAt": "2026-04-08T13:18:21.803Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775654301790",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T13:18:21.703Z",
+    "finishedAt": "2026-04-08T13:18:21.790Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775654301324",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T13:18:21.160Z",
+    "finishedAt": "2026-04-08T13:18:21.324Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775617492852",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T03:04:52.830Z",
+    "finishedAt": "2026-04-08T03:04:52.852Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775617460847",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T03:04:20.819Z",
+    "finishedAt": "2026-04-08T03:04:20.847Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775617459422",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T03:04:19.403Z",
+    "finishedAt": "2026-04-08T03:04:19.422Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775617459389",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T03:04:19.372Z",
+    "finishedAt": "2026-04-08T03:04:19.389Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775617169529",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T02:59:29.499Z",
+    "finishedAt": "2026-04-08T02:59:29.529Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775617054593",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T02:57:34.570Z",
+    "finishedAt": "2026-04-08T02:57:34.593Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775617045663",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T02:57:25.585Z",
+    "finishedAt": "2026-04-08T02:57:25.663Z",
+    "detail": "Generated 6 opportunities from crawl, search, and freshness signals.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775617004085",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T02:56:44.052Z",
+    "finishedAt": "2026-04-08T02:56:44.085Z",
+    "detail": "No live crawl/search/event data was available, so the seeded opportunity set remains active.",
+    "recordCount": 6,
+    "metadata": {}
+  },
+  {
+    "id": "opportunity-engine-run-1775617004007",
+    "connectorId": "suggestions-engine",
+    "provider": "opportunity_engine",
+    "status": "success",
+    "startedAt": "2026-04-08T02:56:43.950Z",
+    "finishedAt": "2026-04-08T02:56:44.007Z",
+    "detail": "No live crawl/search/event data was available, so the seeded opportunity set remains active.",
+    "recordCount": 6,
+    "metadata": {}
+  }
+]

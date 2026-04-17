@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qubic SEO Autopilot</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #00FFFF;
+    --cyan-dim: rgba(0,255,255,0.12);
+    --cyan-border: rgba(0,255,255,0.22);
+    --cyan-glow: rgba(0,255,255,0.06);
+    --black: #000000;
+    --bg: #060608;
+    --surface: rgba(255,255,255,0.032);
+    --surface-hover: rgba(255,255,255,0.06);
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.13);
+    --text: #f0f0f0;
+    --text-muted: rgba(255,255,255,0.38);
+    --text-dim: rgba(255,255,255,0.18);
+    --glass: rgba(8,10,14,0.72);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* subtle grid bg */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+
+  /* ambient glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 500px;
+    background: radial-gradient(ellipse, rgba(0,255,255,0.07) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    position: fixed; top: 0; left: 0; bottom: 0;
+    background: rgba(4,5,7,0.85);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 24px 0;
+    z-index: 100;
+  }
+
+  .logo {
+    padding: 0 20px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-mark {
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--cyan-dim);
+    border: 1px solid var(--cyan-border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-icon svg { width: 16px; height: 16px; }
+  .logo-text { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+  .logo-text span { color: var(--cyan); }
+  .logo-sub { font-size: 10px; color: var(--text-muted); font-family: 'DM Mono', monospace; letter-spacing: 0.08em; margin-top: 2px; }
+
+  .nav { padding: 16px 12px; flex: 1; }
+  .nav-section { font-size: 9px; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; font-family: 'DM Mono', monospace; padding: 0 8px; margin: 16px 0 6px; }
+  .nav-section:first-child { margin-top: 0; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    cursor: pointer; transition: all 0.15s;
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    border: 1px solid transparent;
+    text-decoration: none; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--surface); color: var(--text); }
+  .nav-item.active {
+    background: var(--cyan-dim);
+    border-color: var(--cyan-border);
+    color: var(--cyan);
+  }
+  .nav-item svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+  .nav-badge {
+    margin-left: auto; font-size: 10px; font-family: 'DM Mono', monospace;
+    background: rgba(0,255,255,0.15); color: var(--cyan);
+    padding: 1px 6px; border-radius: 99px;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px 0;
+    border-top: 1px solid var(--border);
+  }
+  .status-pill {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-muted);
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: #00ff88;
+    box-shadow: 0 0 6px #00ff88;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── MAIN ── */
+  .main { margin-left: 220px; flex: 1; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(4,5,7,0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .page-title { font-size: 15px; font-weight: 600; }
+  .breadcrumb { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .breadcrumb span { color: var(--cyan); }
+
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .tb-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-muted); font-family: 'Syne', sans-serif;
+    transition: all 0.15s;
+  }
+  .tb-btn:hover { border-color: var(--border-bright); color: var(--text); background: var(--surface-hover); }
+  .tb-btn.primary {
+    background: var(--cyan-dim); border-color: var(--cyan-border); color: var(--cyan);
+  }
+  .tb-btn.primary:hover { background: rgba(0,255,255,0.18); }
+  .tb-btn svg { width: 12px; height: 12px; }
+
+  /* ── CONTENT ── */
+  .content { padding: 28px; }
+
+  /* ── STAT CARDS ── */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: default;
+  }
+  .stat-card:hover { border-color: var(--border-bright); transform: translateY(-1px); }
+  .stat-card.cyan { border-color: var(--cyan-border); background: var(--cyan-glow); }
+  .stat-card::after {
+    content: ''; position: absolute; top: 0; right: 0;
+    width: 60px; height: 60px;
+    background: radial-gradient(circle at top right, rgba(0,255,255,0.06), transparent 70%);
+    pointer-events: none;
+  }
+
+  .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; font-family: 'DM Mono', monospace; margin-bottom: 10px; }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 6px; }
+  .stat-card.cyan .stat-value { color: var(--cyan); }
+  .stat-delta { font-size: 11px; font-family: 'DM Mono', monospace; }
+  .delta-up { color: #00ff88; }
+  .delta-down { color: #ff5555; }
+  .delta-neutral { color: var(--text-muted); }
+
+  /* ── 2-COL GRID ── */
+  .two-col { display: grid; grid-template-columns: 1fr 340px; gap: 14px; margin-bottom: 24px; }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title { font-size: 13px; font-weight: 600; }
+  .panel-action {
+    font-size: 11px; color: var(--cyan); cursor: pointer; font-family: 'DM Mono', monospace;
+  }
+  .panel-body { padding: 16px 20px; }
+
+  /* ── OPPORTUNITY ITEMS ── */
+  .opp-list { display: flex; flex-direction: column; gap: 10px; }
+  .opp-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 14px; border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    transition: border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+  .opp-item:hover { border-color: var(--cyan-border); background: var(--cyan-glow); }
+  .opp-score {
+    width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; font-family: 'DM Mono', monospace;
+  }
+  .score-high { background: rgba(0,255,136,0.12); color: #00ff88; border: 1px solid rgba(0,255,136,0.2); }
+  .score-med  { background: rgba(239,159,39,0.12); color: #EF9F27; border: 1px solid rgba(239,159,39,0.2); }
+  .score-low  { background: rgba(0,255,255,0.08); color: var(--cyan); border: 1px solid var(--cyan-border); }
+  .opp-info { flex: 1; min-width: 0; }
+  .opp-title { font-size: 12.5px; font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .opp-meta { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .opp-tag {
+    font-size: 10px; padding: 2px 7px; border-radius: 99px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-muted); flex-shrink: 0; align-self: center;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── PIPELINE CARD ── */
+  .pipeline-steps { display: flex; flex-direction: column; gap: 0; }
+  .pipe-step {
+    display: flex; align-items: center; gap: 12px; padding: 10px 0;
+    position: relative;
+  }
+  .pipe-step:not(:last-child)::after {
+    content: '';
+    position: absolute; left: 14px; top: 34px;
+    width: 1px; height: calc(100% - 10px);
+    background: linear-gradient(to bottom, var(--border), transparent);
+  }
+  .pipe-dot {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-family: 'DM Mono', monospace; font-weight: 500;
+    position: relative; z-index: 1;
+  }
+  .pipe-dot.done { background: rgba(0,255,136,0.12); border: 1px solid rgba(0,255,136,0.3); color: #00ff88; }
+  .pipe-dot.running { background: var(--cyan-dim); border: 1px solid var(--cyan-border); color: var(--cyan); }
+  .pipe-dot.pending { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); }
+  .pipe-info { flex: 1; }
+  .pipe-name { font-size: 12px; font-weight: 600; }
+  .pipe-time { font-size: 10.5px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .pipe-status {
+    font-size: 10px; padding: 2px 8px; border-radius: 99px;
+    font-family: 'DM Mono', monospace;
+  }
+  .pipe-status.done { background: rgba(0,255,136,0.1); color: #00ff88; }
+  .pipe-status.running { background: var(--cyan-dim); color: var(--cyan); }
+  .pipe-status.pending { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
+
+  /* ── CONTENT TABLE ── */
+  .content-table { width: 100%; border-collapse: collapse; }
+  .content-table th {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-dim); font-family: 'DM Mono', monospace; font-weight: 400;
+    padding: 0 0 10px; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .content-table td { padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+  .content-table tr:last-child td { border-bottom: none; }
+  .content-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+  .ct-title { font-size: 12.5px; font-weight: 600; margin-bottom: 2px; }
+  .ct-url { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .ct-status {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; padding: 3px 8px; border-radius: 99px;
+    font-family: 'DM Mono', monospace; font-weight: 500;
+  }
+  .ct-status.draft    { background: rgba(239,159,39,0.1); color: #EF9F27; }
+  .ct-status.review   { background: var(--cyan-dim); color: var(--cyan); }
+  .ct-status.published{ background: rgba(0,255,136,0.1); color: #00ff88; }
+  .ct-score-bar { display: flex; align-items: center; gap: 8px; }
+  .bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; background: var(--cyan); }
+  .bar-fill.med { background: #EF9F27; }
+  .bar-num { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-muted); min-width: 28px; }
+
+  /* ── BOTTOM GRID ── */
+  .bottom-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+  /* ── SOURCE CONNECTORS ── */
+  .connector-list { display: flex; flex-direction: column; gap: 8px; }
+  .connector-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+  }
+  .conn-icon {
+    width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-family: 'DM Mono', monospace; font-weight: 700;
+  }
+  .conn-label { flex: 1; font-size: 12px; font-weight: 500; }
+  .conn-sub { font-size: 10.5px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .conn-dot.on  { background: #00ff88; box-shadow: 0 0 5px #00ff88; }
+  .conn-dot.off { background: var(--text-dim); }
+
+  /* ── MINI CHART ── */
+  .mini-chart { position: relative; height: 80px; margin: 4px 0 8px; }
+  .mini-chart canvas { width: 100% !important; height: 80px !important; }
+  .chart-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+
+  /* ── ACTIVITY ── */
+  .activity-list { display: flex; flex-direction: column; gap: 0; }
+  .activity-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .activity-item:last-child { border-bottom: none; }
+  .act-icon {
+    width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface); border: 1px solid var(--border);
+  }
+  .act-icon svg { width: 11px; height: 11px; }
+  .act-text { flex: 1; font-size: 11.5px; color: var(--text-muted); line-height: 1.5; }
+  .act-text strong { color: var(--text); font-weight: 600; }
+  .act-time { font-size: 10px; color: var(--text-dim); font-family: 'DM Mono', monospace; flex-shrink: 0; }
+
+  /* ── SCROLL ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <a class="logo-mark" href="#">
+        <div class="logo-icon">
+          <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" stroke="#00FFFF" stroke-width="1.2" fill="rgba(0,255,255,0.08)"/>
+            <circle cx="8" cy="8" r="2" fill="#00FFFF"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-text">Qubic <span>SEO</span></div>
+          <div class="logo-sub">Autopilot v2.1</div>
+        </div>
+      </a>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section">Overview</div>
+      <a class="nav-item active" href="#">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M7 1L13 4V10L7 13L1 10V4L7 1Z" stroke="currentColor" stroke-width="1.2"/></svg>
+        Suggestions
+        <span class="nav-badge">24</span>
+      </a>
+
+      <div class="nav-section">Create</div>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M2 3h10M2 7h7M2 11h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Content Studio
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Scheduler
+      </a>
+
+      <div class="nav-section">Data</div>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M2 10L5 7 7.5 9.5 11 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Imports
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="4" cy="7" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="10" cy="4" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="10" cy="10" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M6 6L8.5 5M6 8L8.5 9" stroke="currentColor" stroke-width="1.2"/></svg>
+        Connectors
+        <span class="nav-badge">8</span>
+      </a>
+
+      <div class="nav-section">Settings</div>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.93 2.93l1.41 1.41M9.66 9.66l1.41 1.41M2.93 11.07l1.41-1.41M9.66 4.34l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Config
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="status-pill"><div class="status-dot"></div> Autopilot running</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="breadcrumb"><span>qubic.org</span> / dashboard</div>
+      </div>
+      <div class="topbar-right">
+        <button class="tb-btn">
+          <svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 4v2l1.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Last crawl: 4m ago
+        </button>
+        <button class="tb-btn">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6l5 5 5-5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export
+        </button>
+        <button class="tb-btn primary">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Run cycle
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- STAT CARDS -->
+      <div class="stats-grid">
+        <div class="stat-card cyan">
+          <div class="stat-label">Organic clicks</div>
+          <div class="stat-value">12,847</div>
+          <div class="stat-delta delta-up">▲ 18.4% vs last week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg position</div>
+          <div class="stat-value">14.2</div>
+          <div class="stat-delta delta-up">▲ 2.1 improved</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Pages indexed</div>
+          <div class="stat-value">348</div>
+          <div class="stat-delta delta-neutral">— no change</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Open issues</div>
+          <div class="stat-value">37</div>
+          <div class="stat-delta delta-down">▼ 9 new found</div>
+        </div>
+      </div>
+
+      <!-- MAIN 2-COL -->
+      <div class="two-col">
+
+        <!-- OPPORTUNITIES -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Top opportunities</div>
+            <div class="panel-action">View all →</div>
+          </div>
+          <div class="panel-body">
+            <div class="opp-list">
+              <div class="opp-item">
+                <div class="opp-score score-high">94</div>
+                <div class="opp-info">
+                  <div class="opp-title">Missing H1 on 12 ecosystem pages</div>
+                  <div class="opp-meta">Technical · 12 URLs affected</div>
+                </div>
+                <div class="opp-tag">technical</div>
+              </div>
+              <div class="opp-item">
+                <div class="opp-score score-high">88</div>
+                <div class="opp-info">
+                  <div class="opp-title">No content targeting "Qubic staking" keyword cluster</div>
+                  <div class="opp-meta">Content gap · est. 4,200 mo/searches</div>
+                </div>
+                <div class="opp-tag">content</div>
+              </div>
+              <div class="opp-item">
+                <div class="opp-score score-med">72</div>
+                <div class="opp-info">
+                  <div class="opp-title">Internal links to /learn are sparse (avg 0.8 per page)</div>
+                  <div class="opp-meta">Internal linking · 68 pages</div>
+                </div>
+                <div class="opp-tag">links</div>
+              </div>
+              <div class="opp-item">
+                <div class="opp-score score-med">67</div>
+                <div class="opp-info">
+                  <div class="opp-title">Meta descriptions missing on 28 blog posts</div>
+                  <div class="opp-meta">Metadata · 28 URLs affected</div>
+                </div>
+                <div class="opp-tag">metadata</div>
+              </div>
+              <div class="opp-item">
+                <div class="opp-score score-low">51</div>
+                <div class="opp-info">
+                  <div class="opp-title">PageSpeed mobile score below 70 on /ecosystem</div>
+                  <div class="opp-meta">Performance · 1 URL</div>
+                </div>
+                <div class="opp-tag">perf</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PIPELINE -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Autopilot cycle</div>
+            <div class="panel-action">Logs →</div>
+          </div>
+          <div class="panel-body">
+            <div class="pipeline-steps">
+              <div class="pipe-step">
+                <div class="pipe-dot done">✓</div>
+                <div class="pipe-info">
+                  <div class="pipe-name">Site crawl</div>
+                  <div class="pipe-time">Completed · 2m 14s</div>
+                </div>
+                <div class="pipe-status done">done</div>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot done">✓</div>
+                <div class="pipe-info">
+                  <div class="pipe-name">Search Console sync</div>
+                  <div class="pipe-time">Completed · 38s</div>
+                </div>
+                <div class="pipe-status done">done</div>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot running">→</div>
+                <div class="pipe-info">
+                  <div class="pipe-name">Opportunity analysis</div>
+                  <div class="pipe-time">Running · 14s elapsed</div>
+                </div>
+                <div class="pipe-status running">running</div>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot pending">4</div>
+                <div class="pipe-info">
+                  <div class="pipe-name">Content generation</div>
+                  <div class="pipe-time">Waiting for step 3</div>
+                </div>
+                <div class="pipe-status pending">pending</div>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot pending">5</div>
+                <div class="pipe-info">
+                  <div class="pipe-name">GitHub publish</div>
+                  <div class="pipe-time">Waiting</div>
+                </div>
+                <div class="pipe-status pending">pending</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CONTENT TABLE -->
+      <div class="panel" style="margin-bottom: 24px;">
+        <div class="panel-head">
+          <div class="panel-title">Content pipeline</div>
+          <div class="panel-action">Open studio →</div>
+        </div>
+        <div class="panel-body" style="padding: 16px 20px 8px;">
+          <table class="content-table">
+            <thead>
+              <tr>
+                <th style="width: 40%;">Title / URL</th>
+                <th style="width: 12%;">Status</th>
+                <th style="width: 20%;">SEO score</th>
+                <th style="width: 14%;">Stage</th>
+                <th style="width: 14%;">Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="ct-title">What is Qubic Useful Proof of Work?</div>
+                  <div class="ct-url">/blog/what-is-upow</div>
+                </td>
+                <td><span class="ct-status published">● published</span></td>
+                <td><div class="ct-score-bar"><div class="bar-track"><div class="bar-fill" style="width:87%"></div></div><div class="bar-num">87</div></div></td>
+                <td><span style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">live</span></td>
+                <td><span style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;">2d ago</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="ct-title">Qubic vs Ethereum: A Technical Comparison</div>
+                  <div class="ct-url">/blog/qubic-vs-ethereum</div>
+                </td>
+                <td><span class="ct-status review">● in review</span></td>
+                <td><div class="ct-score-bar"><div class="bar-track"><div class="bar-fill med" style="width:64%"></div></div><div class="bar-num">64</div></div></td>
+                <td><span style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">brief</span></td>
+                <td><span style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;">5h ago</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="ct-title">How to use QEarn: Complete Guide</div>
+                  <div class="ct-url">/blog/qearn-guide</div>
+                </td>
+                <td><span class="ct-status draft">● draft</span></td>
+                <td><div class="ct-score-bar"><div class="bar-track"><div class="bar-fill" style="width:42%"></div></div><div class="bar-num">42</div></div></td>
+                <td><span style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">draft</span></td>
+                <td><span style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;">1h ago</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="ct-title">Qubic Staking Explained for Beginners</div>
+                  <div class="ct-url">/blog/qubic-staking</div>
+                </td>
+                <td><span class="ct-status draft">● draft</span></td>
+                <td><div class="ct-score-bar"><div class="bar-track"><div class="bar-fill med" style="width:29%"></div></div><div class="bar-num">29</div></div></td>
+                <td><span style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">idea</span></td>
+                <td><span style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;">just now</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BOTTOM GRID -->
+      <div class="bottom-grid">
+
+        <!-- CONNECTORS -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Connectors</div>
+            <div class="panel-action">Manage →</div>
+          </div>
+          <div class="panel-body">
+            <div class="connector-list">
+              <div class="connector-item">
+                <div class="conn-icon" style="background:rgba(66,133,244,0.12);color:#4285F4;border:1px solid rgba(66,133,244,0.2);">GSC</div>
+                <div>
+                  <div class="conn-label">Search Console</div>
+                  <div class="conn-sub">synced 4m ago</div>
+                </div>
+                <div class="conn-dot on"></div>
+              </div>
+              <div class="connector-item">
+                <div class="conn-icon" style="background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid var(--border);">GH</div>
+                <div>
+                  <div class="conn-label">GitHub</div>
+                  <div class="conn-sub">qubic/docs · active</div>
+                </div>
+                <div class="conn-dot on"></div>
+              </div>
+              <div class="connector-item">
+                <div class="conn-icon" style="background:rgba(0,255,255,0.08);color:var(--cyan);border:1px solid var(--cyan-border);">AI</div>
+                <div>
+                  <div class="conn-label">Anthropic API</div>
+                  <div class="conn-sub">claude-3-opus</div>
+                </div>
+                <div class="conn-dot on"></div>
+              </div>
+              <div class="connector-item">
+                <div class="conn-icon" style="background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid var(--border);">PG</div>
+                <div>
+                  <div class="conn-label">Postgres (Railway)</div>
+                  <div class="conn-sub">primary store</div>
+                </div>
+                <div class="conn-dot on"></div>
+              </div>
+              <div class="connector-item">
+                <div class="conn-icon" style="background:rgba(239,159,39,0.1);color:#EF9F27;border:1px solid rgba(239,159,39,0.2);">GD</div>
+                <div>
+                  <div class="conn-label">GDELT</div>
+                  <div class="conn-sub">last pull: 1h ago</div>
+                </div>
+                <div class="conn-dot on"></div>
+              </div>
+              <div class="connector-item">
+                <div class="conn-icon" style="background:rgba(255,255,255,0.04);color:var(--text-dim);border:1px solid var(--border);">OL</div>
+                <div>
+                  <div class="conn-label">Ollama (local)</div>
+                  <div class="conn-sub">fallback model</div>
+                </div>
+                <div class="conn-dot off"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PERFORMANCE CHART -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Clicks (14d)</div>
+          </div>
+          <div class="panel-body">
+            <div class="mini-chart">
+              <canvas id="clickChart"></canvas>
+            </div>
+            <div class="chart-labels">
+              <span>Mar 25</span><span>Mar 29</span><span>Apr 2</span><span>Apr 7</span>
+            </div>
+            <div style="display:flex;gap:20px;margin-top:16px;">
+              <div>
+                <div style="font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Peak day</div>
+                <div style="font-size:18px;font-weight:700;color:var(--cyan);">1,842</div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Avg / day</div>
+                <div style="font-size:18px;font-weight:700;">917</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVITY -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Activity</div>
+          </div>
+          <div class="panel-body">
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="act-icon">
+                  <svg viewBox="0 0 11 11" fill="none"><path d="M2 5.5L4.5 8 9 3" stroke="#00ff88" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </div>
+                <div class="act-text"><strong>Draft published</strong> — "What is UPoW?" pushed to GitHub main</div>
+                <div class="act-time">2m</div>
+              </div>
+              <div class="activity-item">
+                <div class="act-icon">
+                  <svg viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="#00FFFF" stroke-width="1.2"/><path d="M5.5 3.5v2l1.5 1" stroke="#00FFFF" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </div>
+                <div class="act-text"><strong>Crawl complete</strong> — 348 pages scanned, 9 new issues</div>
+                <div class="act-time">4m</div>
+              </div>
+              <div class="activity-item">
+                <div class="act-icon">
+                  <svg viewBox="0 0 11 11" fill="none"><path d="M2 8.5L5.5 2 9 8.5H2Z" stroke="#EF9F27" stroke-width="1.2"/></svg>
+                </div>
+                <div class="act-text"><strong>Issue detected</strong> — Missing H1 tags on 12 pages</div>
+                <div class="act-time">4m</div>
+              </div>
+              <div class="activity-item">
+                <div class="act-icon">
+                  <svg viewBox="0 0 11 11" fill="none"><rect x="1.5" y="2" width="8" height="7" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 5h4M3.5 6.5h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </div>
+                <div class="act-text"><strong>Brief generated</strong> — "Qubic Staking Explained" ready for edit</div>
+                <div class="act-time">1h</div>
+              </div>
+              <div class="activity-item">
+                <div class="act-icon">
+                  <svg viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M4 5.5L5.5 7 8 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </div>
+                <div class="act-text"><strong>GSC synced</strong> — 14 days of click data imported</div>
+                <div class="act-time">2h</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+  const ctx = document.getElementById('clickChart').getContext('2d');
+  const data = [540,720,680,890,1020,840,970,1100,1380,1200,1580,1720,1842,1790];
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map((_, i) => ''),
+      datasets: [{
+        data,
+        borderColor: '#00FFFF',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.4,
+        fill: true,
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0,0,0,80);
+          g.addColorStop(0, 'rgba(0,255,255,0.18)');
+          g.addColorStop(1, 'rgba(0,255,255,0)');
+          return g;
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: { display: false },
+        y: { display: false, min: 400 }
+      },
+      animation: { duration: 1200, easing: 'easeInOutCubic' }
+    }
+  });
+</script>
+</body>
+</html>

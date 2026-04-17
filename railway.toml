@@ -1,0 +1,11 @@
+# Railway deployment — https://docs.railway.app/deploy/config-as-code
+# Add the Postgres plugin in the Railway UI and link DATABASE_URL to this service.
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "npm run start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"

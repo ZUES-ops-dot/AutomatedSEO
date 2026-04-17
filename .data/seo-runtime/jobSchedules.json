@@ -1,0 +1,35 @@
+[
+  {
+    "id": "schedule-monitoring",
+    "job": "monitor-content",
+    "cadence": "Every 24 hours",
+    "intervalMinutes": 1440,
+    "enabled": true,
+    "lastRunAt": null,
+    "nextRunAt": "2026-04-15T05:39:26.579Z",
+    "lastStatus": null,
+    "detail": "Refresh outcome checkpoints."
+  },
+  {
+    "id": "schedule-opportunities",
+    "job": "opportunities",
+    "cadence": "Every 24 hours",
+    "intervalMinutes": 1440,
+    "enabled": true,
+    "lastRunAt": null,
+    "nextRunAt": "2026-04-15T05:39:26.579Z",
+    "lastStatus": null,
+    "detail": "Recompute opportunity queue daily."
+  },
+  {
+    "id": "schedule-crawl",
+    "job": "crawl",
+    "cadence": "Every 24 hours",
+    "intervalMinutes": 1440,
+    "enabled": true,
+    "lastRunAt": null,
+    "nextRunAt": "2026-04-15T05:39:26.579Z",
+    "lastStatus": null,
+    "detail": "Keep crawl data fresh."
+  }
+]

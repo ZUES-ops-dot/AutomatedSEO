@@ -1,0 +1,17 @@
+[
+  {
+    "id": "rss-https-example-com-feed-xml-qubic-weekly-update",
+    "connectorId": "rss-watch",
+    "kind": "rss_item",
+    "title": "Qubic Weekly Update",
+    "summary": "Fresh ecosystem recap",
+    "url": "https://blogs.qubic.org/weekly",
+    "tags": [
+      "rss",
+      "example.com"
+    ],
+    "score": 64,
+    "publishedAt": "Mon, 01 Jan 2026 00:00:00 GMT",
+    "capturedAt": "2026-04-13T20:44:53.463Z"
+  }
+]
