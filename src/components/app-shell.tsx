@@ -39,7 +39,9 @@ export function AppShell({ children, stats }: AppShellProps) {
   const navSections = [
     {
       label: "SEO loop",
-      items: navigationItems.filter((item) => ["/", "/suggestions", "/content", "/blog-links"].includes(item.href))
+      items: navigationItems.filter((item) =>
+        ["/", "/suggestions", "/content", "/content/generate", "/blog-links"].includes(item.href)
+      )
     },
     {
       label: "Data in",
