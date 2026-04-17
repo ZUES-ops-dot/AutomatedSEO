@@ -4,6 +4,7 @@ import { Download, Link2, Loader2, RefreshCw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { buildBlogLinkPackAction, downloadBlogLinkDocxAction } from "@/app/actions/blog-links";
+import { runSeoJobAction } from "@/app/actions/seo-cycle";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
 
@@ -52,6 +53,8 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [stats, setStats] = useState<{ blogPagesScanned: number; crossSiteSuggestions: number } | null>(null);
+  const [crawlLoading, setCrawlLoading] = useState(false);
+  const [crawlMessage, setCrawlMessage] = useState<string | null>(null);
 
   function formatCrawledAt(value: string) {
     const parsed = new Date(value);
@@ -110,6 +113,24 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
     }
   }
 
+  async function triggerCrawl() {
+    setCrawlLoading(true);
+    setError(null);
+    setCrawlMessage(null);
+    try {
+      const result = await runSeoJobAction("crawl");
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      setCrawlMessage(result.message);
+      await loadList();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Crawl failed.");
+    } finally {
+      setCrawlLoading(false);
+    }
+  }
+
   async function downloadDocx() {
     setDocxLoading(true);
     setError(null);
@@ -159,9 +180,32 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
 
           <div className="max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-black/20">
             {pages.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-white/38">
-                {listLoading ? "Loading…" : "No posts match yet. Run a crawl from Connectors or use “Recrawl blog” below after entering a URL."}
-              </p>
+              <div className="px-4 py-6">
+                <p className="text-sm text-white/55">
+                  {listLoading
+                    ? "Loading…"
+                    : `No blog posts have been crawled yet from ${blogHost}.`}
+                </p>
+                {!listLoading ? (
+                  <p className="mt-1 text-xs text-white/35">
+                    Click “Run crawl” to index posts, or paste a target URL below and check “Recrawl blog”.
+                  </p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={crawlLoading}
+                    onClick={() => void triggerCrawl()}
+                    className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-3 py-1.5 text-xs font-medium text-cyan-200 transition hover:bg-cyan-400/15 disabled:opacity-50"
+                  >
+                    {crawlLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                    {crawlLoading ? "Crawling…" : "Run crawl"}
+                  </button>
+                </div>
+                {crawlMessage ? (
+                  <p className="mt-2 text-xs text-emerald-300">{crawlMessage}</p>
+                ) : null}
+              </div>
             ) : (
               <ul className="divide-y divide-white/[0.06]">
                 {pages.map((p) => (

@@ -8,7 +8,7 @@ import { Activity, Clock3, Download, Loader2, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState, useTransition } from "react";
 
-import { runFullSeoCycleAction } from "@/app/actions/seo-cycle";
+import { runFullSeoCycleAction, type CycleFindings } from "@/app/actions/seo-cycle";
 import { SeoOpsPipeline } from "@/components/seo-ops-pipeline";
 import { navigationItems, pageMeta } from "@/features/seo/config/navigation";
 import type { SystemQuickStats } from "@/features/seo/types";
@@ -29,11 +29,11 @@ function StatPill({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-export function AppShell({ children, stats, privilegedActionsEnabled = false }: AppShellProps) {
+export function AppShell({ children, stats }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const currentMeta = pageMeta[pathname] ?? pageMeta["/"];
-  const [cycleBanner, setCycleBanner] = useState<{ ok: boolean; text: string } | null>(null);
+  const [cycleBanner, setCycleBanner] = useState<{ ok: boolean; text: string; findings?: CycleFindings } | null>(null);
   const [cyclePending, startCycle] = useTransition();
 
   const navSections = [
@@ -48,7 +48,7 @@ export function AppShell({ children, stats, privilegedActionsEnabled = false }: 
   ];
 
   function handleRunCycle() {
-    if (!privilegedActionsEnabled || cyclePending) {
+    if (cyclePending) {
       return;
     }
 
@@ -56,9 +56,19 @@ export function AppShell({ children, stats, privilegedActionsEnabled = false }: 
     startCycle(async () => {
       const result = await runFullSeoCycleAction();
       if (result.ok) {
+        const f = result.findings;
+        const parts: string[] = [];
+        if (f.crawl) parts.push(`${f.crawl.pagesCrawled} pages crawled (${f.crawl.issues} issues)`);
+        if (f.internalLinks) parts.push(`${f.internalLinks.suggestions} link suggestions, ${f.internalLinks.orphanPages} orphans`);
+        if (f.searchSignals) parts.push(`${f.searchSignals.rows} search rows (${f.searchSignals.provider})`);
+        if (f.opportunities) parts.push(`${f.opportunities.candidates} opportunities (top: ${f.opportunities.topBand})`);
+        if (f.rss) parts.push(`${f.rss.events} RSS events`);
+        if (f.gdelt) parts.push(`${f.gdelt.events} GDELT events`);
+
         setCycleBanner({
           ok: true,
-          text: "Technical cycle completed: crawl, internal links, search signals, connectors, and opportunities."
+          text: parts.length > 0 ? `Cycle complete — ${parts.join(" • ")}` : "Cycle complete.",
+          findings: f
         });
         router.refresh();
       } else {
@@ -197,19 +207,13 @@ export function AppShell({ children, stats, privilegedActionsEnabled = false }: 
             </Link>
             <button
               type="button"
-              disabled={cyclePending || !privilegedActionsEnabled}
+              disabled={cyclePending}
               onClick={handleRunCycle}
               className="flex items-center gap-1.5 rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-300 transition hover:bg-cyan-400/15 disabled:opacity-60"
-              title={
-                privilegedActionsEnabled
-                  ? "Run the full SEO cycle"
-                  : "Run cycle is disabled here. Use the authenticated jobs API instead."
-              }
+              title="Run the full SEO cycle: crawl, analyze, generate opportunities"
             >
               {cyclePending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-              <span>
-                {cyclePending ? "Running…" : privilegedActionsEnabled ? "Run cycle" : "Run cycle locked"}
-              </span>
+              <span>{cyclePending ? "Running…" : "Run cycle"}</span>
             </button>
           </div>
         </header>
