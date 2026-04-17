@@ -1,9 +1,11 @@
 "use client";
 
-import { Download, FileText, Loader2, Sparkles, Link as LinkIcon } from "lucide-react";
+import { Download, FileText, Loader2, Sparkles, Target, TrendingUp, Link as LinkIcon } from "lucide-react";
 import { useState } from "react";
 
+import { analyzeKeywordGapsAction } from "@/app/actions/keyword-gaps";
 import { downloadLongFormDocxAction, generateLongFormArticleAction } from "@/app/actions/long-form";
+import type { KeywordGapReport } from "@/features/seo/server/keyword-gaps";
 import type { LongFormArticle } from "@/features/seo/server/long-form-generator";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
@@ -18,6 +20,28 @@ export function LongFormGenerator() {
   const [downloading, setDownloading] = useState(false);
   const [article, setArticle] = useState<LongFormArticle | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [gapLoading, setGapLoading] = useState(false);
+  const [gapReport, setGapReport] = useState<KeywordGapReport | null>(null);
+
+  async function handleAnalyzeGaps() {
+    setGapLoading(true);
+    setError(null);
+    try {
+      const result = await analyzeKeywordGapsAction({
+        topic: topic.trim() || undefined,
+        rankingLimit: 15
+      });
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      setGapReport(result.report);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gap analysis failed.");
+    } finally {
+      setGapLoading(false);
+    }
+  }
 
   async function handleGenerate() {
     if (topic.trim().length === 0) {
@@ -158,6 +182,17 @@ export function LongFormGenerator() {
               {generating ? "Generating article (up to 60s)…" : "Generate article"}
             </button>
 
+            <button
+              type="button"
+              disabled={gapLoading}
+              onClick={() => void handleAnalyzeGaps()}
+              className="inline-flex items-center gap-2 rounded-xl border border-violet-400/25 bg-violet-400/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-400/15 disabled:opacity-50"
+              title="Find keywords you're not ranking for and topic ideas to target"
+            >
+              {gapLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
+              {gapLoading ? "Analyzing…" : "Analyze keyword gaps"}
+            </button>
+
             {article ? (
               <button
                 type="button"
@@ -178,6 +213,106 @@ export function LongFormGenerator() {
           ) : null}
         </div>
       </Panel>
+
+      {gapReport ? (
+        <Panel
+          title="Keyword gap analysis"
+          subtitle={`${gapReport.rankingGaps.length} ranking gaps • ${gapReport.topicGaps.length} topic ideas • analyzed ${gapReport.totalSearchRowsAnalyzed} search rows • via ${gapReport.provider}`}
+        >
+          <div className="space-y-6">
+            {gapReport.rankingGaps.length > 0 ? (
+              <div>
+                <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-violet-200">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Keywords you rank for but underperform
+                </h3>
+                <div className="space-y-2">
+                  {gapReport.rankingGaps.slice(0, 10).map((gap, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start justify-between gap-3 rounded-xl border border-violet-400/10 bg-violet-400/[0.04] p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-medium text-white/90">{gap.query}</p>
+                          <Badge tone="violet">Score {gap.opportunityScore}</Badge>
+                          <Badge tone="slate">Pos #{Math.round(gap.position)}</Badge>
+                          <Badge tone="slate">{gap.impressions} impr</Badge>
+                        </div>
+                        <p className="mono mt-1 text-[10px] text-white/30 truncate">{gap.page}</p>
+                        <p className="mt-1 text-xs text-white/55">{gap.reason}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTopic(gap.query);
+                          setPrimaryKeyword(gap.query);
+                        }}
+                        className="shrink-0 rounded-lg border border-violet-400/20 bg-violet-400/10 px-3 py-1.5 text-xs text-violet-200 transition hover:bg-violet-400/15"
+                      >
+                        Use as topic
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-white/55">
+                No ranking gaps found yet. Run a crawl + search-signals sync first, or use the topic gap suggestions below once you provide a topic.
+              </p>
+            )}
+
+            {gapReport.topicGaps.length > 0 ? (
+              <div>
+                <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-cyan-200">
+                  <Target className="h-3.5 w-3.5" />
+                  Topic ideas you don't cover yet
+                </h3>
+                <div className="space-y-2">
+                  {gapReport.topicGaps.map((gap, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start justify-between gap-3 rounded-xl border border-cyan-400/10 bg-cyan-400/[0.04] p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-medium text-white/90">{gap.keyword}</p>
+                          <Badge tone="cyan">{gap.intent}</Badge>
+                          <Badge tone={gap.estimatedDifficulty === "low" ? "lime" : gap.estimatedDifficulty === "medium" ? "amber" : "rose"}>
+                            {gap.estimatedDifficulty} difficulty
+                          </Badge>
+                        </div>
+                        {gap.suggestedAngle ? (
+                          <p className="mt-1 text-xs text-white/60">
+                            <span className="text-white/35">Angle: </span>
+                            {gap.suggestedAngle}
+                          </p>
+                        ) : null}
+                        {gap.reason ? (
+                          <p className="mt-0.5 text-xs text-white/45">{gap.reason}</p>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTopic(gap.keyword);
+                          setPrimaryKeyword(gap.keyword);
+                          if (gap.suggestedAngle) {
+                            setAngle(gap.suggestedAngle);
+                          }
+                        }}
+                        className="shrink-0 rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-200 transition hover:bg-cyan-400/15"
+                      >
+                        Use as topic
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </Panel>
+      ) : null}
 
       {article ? (
         <Panel title="Preview" subtitle={`${article.wordCount} words • ${article.internalLinkCount} internal links • via ${article.provider}`}>
