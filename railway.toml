@@ -3,6 +3,16 @@
 
 [build]
 builder = "NIXPACKS"
+nixpacksConfigOverlay = """
+[phases.setup]
+nixPkgs = ['nodejs_22', 'npm-10_x']
+
+[phases.install]
+cmds = ['npm install']
+
+[phases.build]
+cmds = ['npm run build']
+"""
 
 [deploy]
 startCommand = "npm run start"
