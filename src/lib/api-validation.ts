@@ -50,7 +50,7 @@ export const contentDraftPostSchema = z.object({
   briefId: z.string().max(200).optional(),
   draftId: z.string().max(200).optional(),
   sourcePackId: z.string().max(200).optional(),
-  provider: z.enum(["anthropic", "ollama", "deterministic"]).optional(),
+  provider: z.enum(["anthropic", "deterministic"]).optional(),
   persist: z.boolean().optional(),
   enforceQualityGates: z.boolean().optional()
 });
@@ -67,7 +67,7 @@ export const contentClusterPostSchema = z.object({
   limit: z.number().int().min(1).max(10).optional(),
   persist: z.boolean().optional(),
   enforceQualityGates: z.boolean().optional(),
-  provider: z.enum(["anthropic", "ollama", "deterministic"]).optional()
+  provider: z.enum(["anthropic", "deterministic"]).optional()
 });
 
 export const sourcePackPostSchema = contentDraftPostSchema;

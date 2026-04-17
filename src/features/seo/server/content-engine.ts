@@ -281,14 +281,6 @@ function resolveProvider(preferred?: GenerationProvider["provider"]): Generation
     };
   }
 
-  if (preferred === "ollama") {
-    return {
-      provider: "ollama",
-      model: appEnv.ollamaModel,
-      live: true
-    };
-  }
-
   if (appEnv.anthropicApiKey.length > 0) {
     return {
       provider: "anthropic",
@@ -395,38 +387,6 @@ async function callAnthropic(system: string, prompt: string) {
   return text;
 }
 
-async function callOllama(system: string, prompt: string) {
-  const response = await fetchWithTimeout(
-    `${appEnv.ollamaBaseUrl}/api/generate`,
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        model: appEnv.ollamaModel,
-        stream: false,
-        prompt: `${system}\n\n${prompt}`
-      })
-    },
-    HTTP_CLIENT.llmTimeoutMs
-  );
-
-  if (!response.ok) {
-    throw new Error(`Ollama request failed with status ${response.status}.`);
-  }
-
-  const data = (await response.json()) as {
-    response?: string;
-  };
-
-  if (!data.response) {
-    throw new Error("Ollama returned an empty response.");
-  }
-
-  return data.response;
-}
-
 function extractJsonBlock<T>(value: string) {
   const trimmed = value.trim();
   const fencedMatch = trimmed.match(/```json\s*([\s\S]*?)```/i)?.[1];
@@ -458,10 +418,7 @@ async function requestJsonGeneration<T>(
   }
 
   try {
-    const text =
-      provider.provider === "anthropic"
-        ? await callAnthropic(system, prompt)
-        : await callOllama(system, prompt);
+    const text = await callAnthropic(system, prompt);
     return extractJsonBlock<T>(text) ?? fallback;
   } catch (error) {
     logSeoEvent("warn", "JSON generation request failed; using deterministic fallback.", {
@@ -519,7 +476,6 @@ export function getContentEngineStatus() {
   return {
     provider,
     anthropicConfigured: appEnv.anthropicApiKey.length > 0,
-    ollamaConfigured: appEnv.ollamaBaseUrl.length > 0,
     primarySiteUrl: appEnv.primarySiteUrl,
     docsSiteUrl: appEnv.docsSiteUrl,
     qubicRpcBaseUrl: appEnv.qubicRpcBaseUrl

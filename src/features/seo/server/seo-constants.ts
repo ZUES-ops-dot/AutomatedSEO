@@ -40,6 +40,6 @@ export const HTTP_CLIENT = {
   defaultTimeoutMs: 30_000,
   /** Longer reads for PageSpeed / heavy JSON APIs. */
   slowApiTimeoutMs: 60_000,
-  /** Anthropic/Ollama can exceed 30s under load. */
+  /** Anthropic can exceed 30s under load. */
   llmTimeoutMs: 120_000
 } as const;

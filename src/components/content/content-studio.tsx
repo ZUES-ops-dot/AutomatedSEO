@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, FileText, Lightbulb, BookOpen } from "lucide-react";
 
+import { publishDraftAction } from "@/app/actions/content";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
 import type {
@@ -78,17 +79,12 @@ export function ContentStudio({
     setPublishState({ draftId: selected.id, loading: true, error: null });
 
     try {
-      const res = await fetch("/api/content/publish", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ draftId: selected.id })
-      });
-      const payload = (await res.json().catch(() => ({}))) as { error?: string; action?: ContentAction };
-      if (!res.ok) {
-        throw new Error(payload.error ?? "Failed to publish/export draft.");
+      const response = await publishDraftAction(selected.id);
+      if (!response.ok) {
+        throw new Error(response.error);
       }
 
-      const result = payload as {
+      const result = response.data as {
         action: ContentAction;
         linkSuggestions: LinkSuggestion[];
         baselineSnapshots: PerformanceSnapshot[];

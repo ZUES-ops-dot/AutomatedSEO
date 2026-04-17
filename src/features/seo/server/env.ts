@@ -6,9 +6,7 @@ const defaultEnv = {
   QUBIC_RPC_BASE_URL: "https://rpc.qubic.org",
   SEARCH_CONSOLE_PROPERTY: "sc-domain:qubic.org",
   GDELT_QUERY: '"Qubic" OR qubic.org',
-  ANTHROPIC_MODEL: "claude-3-5-sonnet-latest",
-  OLLAMA_BASE_URL: "http://localhost:11434",
-  OLLAMA_MODEL: "llama3.1"
+  ANTHROPIC_MODEL: "claude-3-5-sonnet-latest"
 } as const;
 
 function readEnvValue(key: string, fallback = "") {
@@ -43,8 +41,6 @@ export const appEnv = {
     .filter(Boolean),
   anthropicApiKey: readEnvValue("ANTHROPIC_API_KEY"),
   anthropicModel: getResolvedEnvValue("ANTHROPIC_MODEL"),
-  ollamaBaseUrl: getResolvedEnvValue("OLLAMA_BASE_URL"),
-  ollamaModel: getResolvedEnvValue("OLLAMA_MODEL"),
   databaseUrl: readEnvValue("DATABASE_URL"),
   jobSecret: readEnvValue("JOB_SECRET"),
   redisUrl: readEnvValue("REDIS_URL"),
@@ -89,8 +85,6 @@ export function getEnvironmentOverview() {
       qubicRpcConfigured: hasAllEnvKeys(["QUBIC_RPC_BASE_URL"]),
       rssConfigured: appEnv.rssFeedUrls.length > 0,
       anthropicConfigured: appEnv.anthropicApiKey.length > 0,
-      ollamaConfigured:
-        typeof process.env.OLLAMA_BASE_URL === "string" && process.env.OLLAMA_BASE_URL.trim().length > 0,
       databaseConfigured: appEnv.databaseUrl.length > 0,
       redisConfigured: appEnv.redisUrl.length > 0,
       jobQueueConfigured: appEnv.redisUrl.length > 0 && appEnv.useJobQueue,
@@ -107,7 +101,6 @@ const optionalEnvKeys = [
   "GOOGLE_API_KEY",
   "RSS_FEED_URLS",
   "ANTHROPIC_API_KEY",
-  "OLLAMA_BASE_URL",
   "DATABASE_URL",
   "REDIS_URL"
 ] as const;

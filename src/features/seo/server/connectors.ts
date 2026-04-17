@@ -1,5 +1,5 @@
 import { connectors } from "@/features/seo/data/demo-data";
-import { appEnv, deploymentTarget, getConfiguredEnvKeyCount, getMissingEnvKeys } from "@/features/seo/server/env";
+import { deploymentTarget, getConfiguredEnvKeyCount, getMissingEnvKeys } from "@/features/seo/server/env";
 import type { Connector, ConnectorGroup, ConnectorGroupView, ConnectorRuntime, ConnectorState, ConnectorSummary } from "@/features/seo/types";
 
 const groupLabels: Record<ConnectorGroup, string> = {
@@ -7,8 +7,7 @@ const groupLabels: Record<ConnectorGroup, string> = {
   google_signals: "Google signals",
   qubic_sources: "Qubic official sources",
   community_signals: "Community and market signals",
-  ai_generation: "AI generation",
-  local_ai: "Local AI and enrichment"
+  ai_generation: "AI generation"
 };
 
 function resolveConnectorStatus(connector: Connector, missingEnvKeys: string[]): ConnectorState {
@@ -25,11 +24,9 @@ function resolveConnectorStatus(connector: Connector, missingEnvKeys: string[]):
 
 function buildSetupHint(connector: ConnectorRuntime) {
   if (connector.missingEnvKeys.length === 0) {
-    return connector.group === "local_ai"
-      ? `Ready for local use at ${appEnv.ollamaBaseUrl}.`
-      : deploymentTarget === "railway"
-        ? "Ready for Railway deployment and scheduled jobs."
-        : "Ready for local development and API execution.";
+    return deploymentTarget === "railway"
+      ? "Ready for Railway deployment and scheduled jobs."
+      : "Ready for local development and API execution.";
   }
 
   if (connector.id === "search-console") {

@@ -404,18 +404,6 @@ export const connectors: Connector[] = [
     auth: "Anthropic API key",
     outputs: ["brief generation", "draft generation", "revision passes"],
     envKeys: ["ANTHROPIC_API_KEY"]
-  },
-  {
-    id: "ollama",
-    name: "Ollama Drafting",
-    group: "local_ai",
-    description: "Provides local drafting and summarization for briefs and blog workflows.",
-    cadence: "On demand",
-    status: "planned",
-    healthScore: 40,
-    auth: "Local host endpoint",
-    outputs: ["draft outlines", "summaries", "rewrite support"],
-    envKeys: ["OLLAMA_BASE_URL"]
   }
 ];
 

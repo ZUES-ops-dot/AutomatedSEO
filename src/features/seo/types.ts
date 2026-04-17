@@ -24,8 +24,7 @@ export type ConnectorGroup =
   | "google_signals"
   | "qubic_sources"
   | "community_signals"
-  | "ai_generation"
-  | "local_ai";
+  | "ai_generation";
 
 export interface OpportunityCandidate {
   id: string;
@@ -191,7 +190,7 @@ export interface SourcePack {
 }
 
 export interface GenerationProvider {
-  provider: "anthropic" | "ollama" | "deterministic";
+  provider: "anthropic" | "deterministic";
   model: string;
   live: boolean;
 }

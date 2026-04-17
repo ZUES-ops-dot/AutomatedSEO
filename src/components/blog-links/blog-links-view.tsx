@@ -3,6 +3,7 @@
 import { Download, Link2, Loader2, RefreshCw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { buildBlogLinkPackAction, downloadBlogLinkDocxAction } from "@/app/actions/blog-links";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
 
@@ -90,28 +91,18 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
     setSuggestions([]);
     setStats(null);
     try {
-      const res = await fetch("/api/blog-links", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl, recrawl, maxPages: 48 })
+      const result = await buildBlogLinkPackAction(targetUrl, { recrawl, maxPages: 48 });
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      if (result.message) {
+        setMessage(result.message);
+      }
+      setSuggestions(result.suggestions);
+      setStats({
+        blogPagesScanned: result.blogPagesScanned,
+        crossSiteSuggestions: result.crossSiteSuggestions
       });
-      const data = (await res.json()) as {
-        suggestions?: Suggestion[];
-        message?: string;
-        blogPagesScanned?: number;
-        crossSiteSuggestions?: number;
-        error?: string;
-      };
-      if (!res.ok) {
-        throw new Error(data.error ?? "Could not build link suggestions.");
-      }
-      if (data.message) {
-        setMessage(data.message);
-      }
-      setSuggestions(data.suggestions ?? []);
-      if (data.blogPagesScanned != null && data.crossSiteSuggestions != null) {
-        setStats({ blogPagesScanned: data.blogPagesScanned, crossSiteSuggestions: data.crossSiteSuggestions });
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed.");
     } finally {
@@ -123,23 +114,18 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
     setDocxLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/blog-links/docx", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl, recrawl, maxPages: 48 })
-      });
-      if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(err.error ?? "DOCX export failed.");
+      const result = await downloadBlogLinkDocxAction(targetUrl, { recrawl, maxPages: 48 });
+      if (!result.ok) {
+        throw new Error(result.error);
       }
-      const blob = await res.blob();
-      const dispo = res.headers.get("Content-Disposition");
-      const match = dispo?.match(/filename="([^"]+)"/);
-      const filename = match?.[1] ?? "blog-links.docx";
+      const bytes = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename;
+      a.download = result.filename;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
