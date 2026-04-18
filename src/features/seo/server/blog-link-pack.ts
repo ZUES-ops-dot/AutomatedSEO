@@ -156,13 +156,29 @@ export function normalizeTargetBlogUrl(input: string) {
 }
 
 export async function ensureBlogPagesIndexed(options: { recrawl?: boolean; maxPages?: number; seedUrls?: string[] }) {
+  const seedUrls = (options.seedUrls ?? []).map(normalizeUrl).filter(Boolean);
+
   if (options.recrawl) {
-    await crawlConfiguredSites({ site: "blog", maxPages: options.maxPages ?? 48, seedUrls: options.seedUrls });
+    await crawlConfiguredSites({ site: "blog", maxPages: options.maxPages ?? 48, seedUrls });
     return;
   }
+
   const existing = await getSitePages("blog");
   if (existing.length === 0) {
-    await crawlConfiguredSites({ site: "blog", maxPages: options.maxPages ?? 48, seedUrls: options.seedUrls });
+    await crawlConfiguredSites({ site: "blog", maxPages: options.maxPages ?? 48, seedUrls });
+    return;
+  }
+
+  // If caller specified seed URLs not yet in the index, crawl those so the
+  // user-supplied target post gets fetched even without a full recrawl.
+  const existingUrls = new Set(existing.map((page) => normalizeUrl(page.url)));
+  const missingSeeds = seedUrls.filter((url) => !existingUrls.has(url));
+  if (missingSeeds.length > 0) {
+    await crawlConfiguredSites({
+      site: "blog",
+      maxPages: Math.max(missingSeeds.length, Math.min(options.maxPages ?? 12, 12)),
+      seedUrls: missingSeeds
+    });
   }
 }
 

@@ -144,7 +144,11 @@ async function buildSitePage(
   crawlDepth: number,
   renderedSession?: RenderedExtractionSession | null
 ): Promise<SitePage> {
-  const snapshot = await extractPageSnapshot(url, baseUrl, site === "primary", {
+  // Blog (qubic.org/blog-detail/*) is served by Framer and is client-rendered,
+  // so static HTML has almost no content/links. Prefer headless rendering for
+  // blog scope too; docs site serves static HTML and does not need it.
+  const preferRendered = site === "primary" || site === "blog";
+  const snapshot = await extractPageSnapshot(url, baseUrl, preferRendered, {
     renderedSession
   });
   const draftPage = {
@@ -210,7 +214,8 @@ async function crawlSingleSite(site: SiteScope, maxPages: number, seedUrls?: str
   logSeoEvent("info", "Crawl starting.", { site, baseUrl, maxPages, pathFilter: pathFilter ?? null });
 
   try {
-    renderedSession = site === "primary" ? await createRenderedExtractionSession() : null;
+    renderedSession =
+      site === "primary" || site === "blog" ? await createRenderedExtractionSession() : null;
     const discoveredSitemapUrls = await fetchSitemapUrls(baseUrl, pathFilter);
 
     // For blog scope: if sitemap yielded any filtered URLs, use those as seeds
