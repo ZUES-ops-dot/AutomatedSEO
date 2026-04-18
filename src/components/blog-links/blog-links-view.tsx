@@ -3,8 +3,6 @@
 import { Download, Link2, Loader2, RefreshCw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { buildBlogLinkPackAction, downloadBlogLinkDocxAction } from "@/app/actions/blog-links";
-import { runSeoJobAction } from "@/app/actions/seo-cycle";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
 
@@ -94,17 +92,30 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
     setSuggestions([]);
     setStats(null);
     try {
-      const result = await buildBlogLinkPackAction(targetUrl, { recrawl, maxPages: 48 });
-      if (!result.ok) {
-        throw new Error(result.error);
+      const response = await fetch("/api/blog-links", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({ targetUrl, recrawl, maxPages: 48 })
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string | null;
+        suggestions?: Suggestion[];
+        blogPagesScanned?: number;
+        crossSiteSuggestions?: number;
+      };
+      if (!response.ok) {
+        throw new Error(result.error ?? "Request failed.");
       }
       if (result.message) {
         setMessage(result.message);
       }
-      setSuggestions(result.suggestions);
+      setSuggestions(result.suggestions ?? []);
       setStats({
-        blogPagesScanned: result.blogPagesScanned,
-        crossSiteSuggestions: result.crossSiteSuggestions
+        blogPagesScanned: result.blogPagesScanned ?? 0,
+        crossSiteSuggestions: result.crossSiteSuggestions ?? 0
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed.");
@@ -118,11 +129,18 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
     setError(null);
     setCrawlMessage(null);
     try {
-      const result = await runSeoJobAction("crawl");
-      if (!result.ok) {
-        throw new Error(result.error);
+      const response = await fetch("/api/jobs", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({ job: "crawl" })
+      });
+      const result = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
+      if (!response.ok) {
+        throw new Error(result.error ?? "Crawl failed.");
       }
-      setCrawlMessage(result.message);
+      setCrawlMessage(result.message ?? "Crawl completed.");
       await loadList();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Crawl failed.");
@@ -135,18 +153,27 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
     setDocxLoading(true);
     setError(null);
     try {
-      const result = await downloadBlogLinkDocxAction(targetUrl, { recrawl, maxPages: 48 });
-      if (!result.ok) {
-        throw new Error(result.error);
+      const response = await fetch("/api/blog-links/docx", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({ targetUrl, recrawl, maxPages: 48 })
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(payload.error ?? "DOCX export failed.");
       }
-      const bytes = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0));
+      const bytes = await response.arrayBuffer();
       const blob = new Blob([bytes], {
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = result.filename;
+      const disposition = response.headers.get("content-disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/i);
+      a.download = match?.[1] ?? "blog-link-pack.docx";
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {

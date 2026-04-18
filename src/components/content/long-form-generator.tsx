@@ -3,8 +3,6 @@
 import { Download, FileText, Loader2, Sparkles, Target, TrendingUp, Link as LinkIcon } from "lucide-react";
 import { useState } from "react";
 
-import { analyzeKeywordGapsAction } from "@/app/actions/keyword-gaps";
-import { downloadLongFormDocxAction, generateLongFormArticleAction } from "@/app/actions/long-form";
 import type { KeywordGapReport } from "@/features/seo/server/keyword-gaps";
 import type { LongFormArticle } from "@/features/seo/server/long-form-generator";
 import { Badge } from "@/components/ui/badge";
@@ -28,12 +26,19 @@ export function LongFormGenerator() {
     setGapLoading(true);
     setError(null);
     try {
-      const result = await analyzeKeywordGapsAction({
-        topic: topic.trim() || undefined,
-        rankingLimit: 15
+      const response = await fetch("/api/keyword-gaps", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          topic: topic.trim() || undefined,
+          rankingLimit: 15
+        })
       });
-      if (!result.ok) {
-        throw new Error(result.error);
+      const result = (await response.json().catch(() => ({}))) as { report?: KeywordGapReport; error?: string };
+      if (!response.ok || !result.report) {
+        throw new Error(result.error ?? "Gap analysis failed.");
       }
       setGapReport(result.report);
     } catch (e) {
@@ -54,16 +59,22 @@ export function LongFormGenerator() {
     setArticle(null);
 
     try {
-      const result = await generateLongFormArticleAction({
-        topic: topic.trim(),
-        primaryKeyword: primaryKeyword.trim() || undefined,
-        targetWordCount,
-        audience: audience.trim() || undefined,
-        angle: angle.trim() || undefined
+      const response = await fetch("/api/long-form", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          topic: topic.trim(),
+          primaryKeyword: primaryKeyword.trim() || undefined,
+          targetWordCount,
+          audience: audience.trim() || undefined,
+          angle: angle.trim() || undefined
+        })
       });
-
-      if (!result.ok) {
-        throw new Error(result.error);
+      const result = (await response.json().catch(() => ({}))) as { article?: LongFormArticle; error?: string };
+      if (!response.ok || !result.article) {
+        throw new Error(result.error ?? "Generation failed.");
       }
 
       setArticle(result.article);
@@ -81,19 +92,28 @@ export function LongFormGenerator() {
     setError(null);
 
     try {
-      const result = await downloadLongFormDocxAction(article);
-      if (!result.ok) {
-        throw new Error(result.error);
+      const response = await fetch("/api/long-form/docx", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({ article })
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(payload.error ?? "Download failed.");
       }
 
-      const bytes = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0));
+      const bytes = await response.arrayBuffer();
       const blob = new Blob([bytes], {
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = result.filename;
+      const disposition = response.headers.get("content-disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/i);
+      a.download = match?.[1] ?? "qubic-article.docx";
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {

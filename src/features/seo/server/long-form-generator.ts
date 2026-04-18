@@ -85,6 +85,73 @@ function computeInternalLinkCount(article: Omit<LongFormArticle, "wordCount" | "
   return article.sections.reduce((acc, section) => acc + section.internalLinks.length, 0);
 }
 
+function dedupeSectionLinks(section: LongFormSection): LongFormSection {
+  const seen = new Set<string>();
+  return {
+    ...section,
+    internalLinks: section.internalLinks.filter((link) => {
+      const key = `${link.targetUrl}::${link.anchorText.toLowerCase()}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    })
+  };
+}
+
+function enforceMinimumInternalLinks(
+  article: Omit<LongFormArticle, "wordCount" | "internalLinkCount">,
+  linkCandidates: Array<{ url: string; title: string; keywords: string[] }>,
+  minimum = 10
+): Omit<LongFormArticle, "wordCount" | "internalLinkCount"> {
+  const sections = article.sections.map((section) => dedupeSectionLinks(section));
+  const seenTargets = new Set(sections.flatMap((section) => section.internalLinks.map((link) => link.targetUrl)));
+  let linkCount = sections.reduce((acc, section) => acc + section.internalLinks.length, 0);
+
+  if (sections.length === 0 || linkCount >= minimum) {
+    return { ...article, sections };
+  }
+
+  let candidateIndex = 0;
+  while (linkCount < minimum && linkCandidates.length > 0) {
+    const sectionIndex = linkCount % sections.length;
+    const candidate = linkCandidates[candidateIndex % linkCandidates.length];
+    candidateIndex += 1;
+
+    const anchorText = candidate.title.trim() || candidate.url;
+    const hasSectionLink = sections[sectionIndex].internalLinks.some(
+      (link) => link.targetUrl === candidate.url || link.anchorText.toLowerCase() === anchorText.toLowerCase()
+    );
+    if (hasSectionLink) {
+      if (candidateIndex > linkCandidates.length * Math.max(2, minimum)) {
+        break;
+      }
+      continue;
+    }
+
+    const reason = seenTargets.has(candidate.url)
+      ? `Additional internal reference that reinforces related ${article.topic} context from another section.`
+      : `Relevant internal page that should be referenced inline while covering ${article.topic}.`;
+
+    sections[sectionIndex] = {
+      ...sections[sectionIndex],
+      internalLinks: [
+        ...sections[sectionIndex].internalLinks,
+        {
+          anchorText,
+          targetUrl: candidate.url,
+          reason
+        }
+      ]
+    };
+    seenTargets.add(candidate.url);
+    linkCount += 1;
+  }
+
+  return { ...article, sections: sections.map((section) => dedupeSectionLinks(section)) };
+}
+
 /**
  * Given a topic and available site pages, pick the most relevant pages
  * to internally link to in the generated article.
@@ -269,10 +336,12 @@ function buildDeterministicArticle(
     generatedAt: new Date().toISOString()
   };
 
+  const enriched = enforceMinimumInternalLinks(withoutCounts, linkCandidates, 10);
+
   return {
-    ...withoutCounts,
-    wordCount: computeArticleWordCount(withoutCounts),
-    internalLinkCount: computeInternalLinkCount(withoutCounts)
+    ...enriched,
+    wordCount: computeArticleWordCount(enriched),
+    internalLinkCount: computeInternalLinkCount(enriched)
   };
 }
 
@@ -400,10 +469,12 @@ async function buildArticleWithAnthropic(
       generatedAt: new Date().toISOString()
     };
 
+    const enriched = enforceMinimumInternalLinks(withoutCounts, linkCandidates, 10);
+
     return {
-      ...withoutCounts,
-      wordCount: computeArticleWordCount(withoutCounts),
-      internalLinkCount: computeInternalLinkCount(withoutCounts)
+      ...enriched,
+      wordCount: computeArticleWordCount(enriched),
+      internalLinkCount: computeInternalLinkCount(enriched)
     };
   } catch (error) {
     logSeoEvent("warn", "Long-form Anthropic call failed; using deterministic fallback.", {

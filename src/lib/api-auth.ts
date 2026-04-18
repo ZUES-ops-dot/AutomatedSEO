@@ -3,6 +3,15 @@ import type { NextRequest } from "next/server";
 import { appEnv } from "@/features/seo/server/env";
 import { jsonError } from "@/lib/api-error";
 
+function isSameOriginRequest(request: NextRequest) {
+  const origin = request.headers.get("origin")?.trim();
+  if (!origin) {
+    return false;
+  }
+
+  return origin === request.nextUrl.origin;
+}
+
 function readProvidedSecret(request: NextRequest) {
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   const headerSecret = request.headers.get("x-job-secret") ?? "";
@@ -10,6 +19,9 @@ function readProvidedSecret(request: NextRequest) {
 }
 
 export function isApiAuthorized(request: NextRequest) {
+  if (isSameOriginRequest(request)) {
+    return true;
+  }
   if (!appEnv.jobSecret) {
     return process.env.NODE_ENV !== "production";
   }

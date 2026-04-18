@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Clock, Loader2, X } from "lucide-react";
 
-import { updateSuggestionStatusAction } from "@/app/actions/suggestions";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
 import { actionTone, statusTone } from "@/features/seo/lib/presentation";
@@ -53,11 +52,18 @@ export function SuggestionsBoard({ initialOpportunities }: SuggestionsBoardProps
     setOpportunities((c) => c.map((i) => (i.id === selected.id ? optimistic : i)));
 
     try {
-      const result = await updateSuggestionStatusAction({ id: selected.id, status });
-      if (!result.ok) {
-        throw new Error(result.error);
+      const response = await fetch("/api/suggestions", {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({ id: selected.id, status })
+      });
+      const payload = (await response.json().catch(() => ({}))) as Opportunity & { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Could not update status.");
       }
-      const persisted = result.opportunity;
+      const persisted = payload as Opportunity;
       setOpportunities((c) => c.map((i) => (i.id === persisted.id ? persisted : i)));
     } catch (error) {
       setPatchError(error instanceof Error ? error.message : "Could not update status.");

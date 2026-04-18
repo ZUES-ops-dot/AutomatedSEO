@@ -246,12 +246,6 @@ function normalizeStoredOpportunity(raw: unknown): Opportunity {
 }
 
 function isValidOpportunityStatusTransition(from: Opportunity["status"], to: Opportunity["status"]): boolean {
-  if (from === to) {
-    return true;
-  }
-  if (from === "dismissed" && (to === "approved" || to === "drafting" || to === "in_review")) {
-    return false;
-  }
   return true;
 }
 
@@ -537,13 +531,13 @@ export async function getContentStudioData(): Promise<ContentStudioData> {
     readCollection("linkSuggestions"),
     readCollection("performanceSnapshots")
   ]);
-  const mergedDrafts = mergeById(drafts, storedDrafts);
-  const studioDraftIds = new Set(mergedDrafts.map((draft) => draft.id));
+  const visibleDrafts = sortByTimestamp(storedDrafts, (item) => item.id);
+  const studioDraftIds = new Set(visibleDrafts.map((draft) => draft.id));
 
   return {
     ideas: contentIdeas,
     briefs: mergeById(contentBriefs, briefs),
-    drafts: mergedDrafts,
+    drafts: visibleDrafts,
     sourcePacks: sortByTimestamp(sourcePacks, (item) => item.generatedAt),
     actions: sortByTimestamp(contentActions, (item) => item.updatedAt),
     linkSuggestions: sortByTimestamp(

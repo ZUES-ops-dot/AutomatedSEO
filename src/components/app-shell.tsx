@@ -8,11 +8,22 @@ import { Activity, Clock3, Download, Loader2, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState, useTransition } from "react";
 
-import { runFullSeoCycleAction, type CycleFindings } from "@/app/actions/seo-cycle";
 import { SeoOpsPipeline } from "@/components/seo-ops-pipeline";
 import { navigationItems, pageMeta } from "@/features/seo/config/navigation";
 import type { SystemQuickStats } from "@/features/seo/types";
 import { cn } from "@/lib/utils";
+
+type CycleFindings = {
+  job: string;
+  crawl?: { pagesCrawled: number; issues: number };
+  internalLinks?: { suggestions: number; orphanPages: number };
+  searchSignals?: { provider: string; rows: number };
+  pageSpeed?: { snapshots: number };
+  rss?: { events: number };
+  gdelt?: { events: number };
+  opportunities?: { candidates: number; topBand: string };
+  monitoring?: { checkpoints: number };
+};
 
 interface AppShellProps {
   children: ReactNode;
@@ -56,8 +67,17 @@ export function AppShell({ children, stats }: AppShellProps) {
 
     setCycleBanner(null);
     startCycle(async () => {
-      const result = await runFullSeoCycleAction();
-      if (result.ok) {
+      const response = await fetch("/api/cycle", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        }
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        findings?: CycleFindings;
+        error?: string;
+      };
+      if (response.ok && result.findings) {
         const f = result.findings;
         const parts: string[] = [];
         if (f.crawl) parts.push(`${f.crawl.pagesCrawled} pages crawled (${f.crawl.issues} issues)`);
@@ -74,7 +94,7 @@ export function AppShell({ children, stats }: AppShellProps) {
         });
         router.refresh();
       } else {
-        setCycleBanner({ ok: false, text: result.error });
+        setCycleBanner({ ok: false, text: result.error ?? "Full cycle failed." });
       }
     });
   }

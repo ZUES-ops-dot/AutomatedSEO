@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, FileText, Lightbulb, BookOpen, Loader2 } from "lucide-react";
 
-import { downloadDraftDocxAction } from "@/app/actions/content";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
 import type {
@@ -75,19 +74,28 @@ export function ContentStudio({
     setDocxState({ draftId: selected.id, loading: true, error: null });
 
     try {
-      const response = await downloadDraftDocxAction(selected.id);
+      const response = await fetch("/api/content/docx", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({ draftId: selected.id })
+      });
       if (!response.ok) {
-        throw new Error(response.error);
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(payload.error ?? "Failed.");
       }
 
-      const bytes = Uint8Array.from(atob(response.base64), (c) => c.charCodeAt(0));
+      const bytes = await response.arrayBuffer();
       const blob = new Blob([bytes], {
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = response.filename;
+      const disposition = response.headers.get("content-disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/i);
+      a.download = match?.[1] ?? "qubic-draft.docx";
       a.click();
       URL.revokeObjectURL(url);
 

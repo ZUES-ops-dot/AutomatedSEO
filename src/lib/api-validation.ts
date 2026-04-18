@@ -62,6 +62,10 @@ export const contentPublishPostSchema = z.object({
   target: z.enum(["local_markdown"]).optional()
 });
 
+export const contentDraftDocxPostSchema = z.object({
+  draftId: z.string().min(1).max(200)
+});
+
 export const contentClusterPostSchema = z.object({
   cluster: z.string().max(200).optional(),
   limit: z.number().int().min(1).max(10).optional(),
@@ -82,6 +86,54 @@ export const blogLinkPackPostSchema = z.object({
   targetUrl: z.string().max(2000).optional(),
   recrawl: z.boolean().optional(),
   maxPages: z.number().int().positive().max(200).optional()
+});
+
+export const keywordGapPostSchema = z.object({
+  topic: z.string().max(500).optional(),
+  rankingLimit: z.number().int().min(1).max(100).optional()
+});
+
+export const longFormPostSchema = z.object({
+  topic: z.string().min(1).max(500),
+  primaryKeyword: z.string().max(500).optional(),
+  targetWordCount: z.number().int().min(500).max(6000).optional(),
+  audience: z.string().max(500).optional(),
+  angle: z.string().max(1000).optional()
+});
+
+export const longFormDocxPostSchema = z.object({
+  article: z.object({
+    id: z.string().max(200),
+    topic: z.string().max(500),
+    title: z.string().max(500),
+    metaTitle: z.string().max(200),
+    metaDescription: z.string().max(300),
+    introduction: z.array(z.string().max(20000)).max(50),
+    sections: z.array(
+      z.object({
+        heading: z.string().max(500),
+        paragraphs: z.array(z.string().max(20000)).max(50),
+        internalLinks: z.array(
+          z.object({
+            anchorText: z.string().max(500),
+            targetUrl: z.string().max(2000),
+            reason: z.string().max(2000)
+          })
+        ).max(100)
+      })
+    ).max(30),
+    conclusion: z.array(z.string().max(20000)).max(30),
+    faq: z.array(
+      z.object({
+        question: z.string().max(500),
+        answer: z.string().max(20000)
+      })
+    ).max(20),
+    provider: z.enum(["anthropic", "deterministic"]),
+    generatedAt: z.string().max(100),
+    wordCount: z.number().int().nonnegative(),
+    internalLinkCount: z.number().int().nonnegative()
+  })
 });
 
 export const searchSignalPostSchema = z
