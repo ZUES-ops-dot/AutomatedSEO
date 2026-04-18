@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, FileText, Lightbulb, BookOpen } from "lucide-react";
+import { Download, FileText, Lightbulb, BookOpen, Loader2 } from "lucide-react";
 
-import { publishDraftAction } from "@/app/actions/content";
+import { downloadDraftDocxAction } from "@/app/actions/content";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
 import type {
@@ -34,10 +34,6 @@ interface ContentStudioProps {
   performanceSnapshots?: PerformanceSnapshot[];
 }
 
-function upsertById<T extends { id: string }>(items: T[], nextItem: T) {
-  return [nextItem, ...items.filter((item) => item.id !== nextItem.id)];
-}
-
 export function ContentStudio({
   ideas = [],
   briefs = [],
@@ -48,10 +44,10 @@ export function ContentStudio({
 }: ContentStudioProps) {
   const [tab, setTab] = useState<StudioTab>("ideas");
   const [selectedId, setSelectedId] = useState(ideas[0]?.id ?? "");
-  const [contentActions, setContentActions] = useState(actions);
-  const [draftLinkSuggestions, setDraftLinkSuggestions] = useState(linkSuggestions);
-  const [draftSnapshots, setDraftSnapshots] = useState(performanceSnapshots);
-  const [publishState, setPublishState] = useState<{ draftId: string; loading: boolean; error: string | null }>({
+  const [contentActions] = useState(actions);
+  const [draftLinkSuggestions] = useState(linkSuggestions);
+  const [draftSnapshots] = useState(performanceSnapshots);
+  const [docxState, setDocxState] = useState<{ draftId: string; loading: boolean; error: string | null }>({
     draftId: "",
     loading: false,
     error: null
@@ -74,40 +70,30 @@ export function ContentStudio({
     ? draftSnapshots.filter((s) => s.actionId === selectedAction.id)
     : [];
 
-  async function publishSelectedDraft() {
+  async function downloadSelectedDraftDocx() {
     if (!selected || !("sections" in selected)) return;
-    setPublishState({ draftId: selected.id, loading: true, error: null });
+    setDocxState({ draftId: selected.id, loading: true, error: null });
 
     try {
-      const response = await publishDraftAction(selected.id);
+      const response = await downloadDraftDocxAction(selected.id);
       if (!response.ok) {
         throw new Error(response.error);
       }
 
-      const result = response.data as {
-        action: ContentAction;
-        linkSuggestions: LinkSuggestion[];
-        baselineSnapshots: PerformanceSnapshot[];
-      };
-
-      if (!result.action) {
-        throw new Error("Invalid response from publish endpoint.");
-      }
-
-      setContentActions((c) => upsertById(c, result.action));
-      setDraftLinkSuggestions((c) => {
-        let n = c;
-        for (const s of result.linkSuggestions ?? []) n = upsertById(n, s);
-        return n;
+      const bytes = Uint8Array.from(atob(response.base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       });
-      setDraftSnapshots((c) => {
-        let n = c;
-        for (const s of result.baselineSnapshots ?? []) n = upsertById(n, s);
-        return n;
-      });
-      setPublishState({ draftId: selected.id, loading: false, error: null });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = response.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      setDocxState({ draftId: selected.id, loading: false, error: null });
     } catch (error) {
-      setPublishState({ draftId: selected.id, loading: false, error: error instanceof Error ? error.message : "Failed." });
+      setDocxState({ draftId: selected.id, loading: false, error: error instanceof Error ? error.message : "Failed." });
     }
   }
 
@@ -261,7 +247,7 @@ export function ContentStudio({
                     <div className="flex items-center gap-3 rounded-xl border border-cyan-400/10 bg-cyan-400/[0.06] px-4 py-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white">
-                          {selectedAction ? selectedAction.detail : "Export to markdown or GitHub"}
+                          {selectedAction ? selectedAction.detail : "Download this draft as a Word document for review and publishing."}
                         </p>
                         {selectedAction && (
                           <div className="mt-1.5 flex gap-1.5">
@@ -269,20 +255,24 @@ export function ContentStudio({
                             <Badge tone={selectedAction.status === "error" ? "rose" : "lime"}>{selectedAction.status.replaceAll("_", " ")}</Badge>
                           </div>
                         )}
-                        {publishState.error && publishState.draftId === selected.id && (
+                        {docxState.error && docxState.draftId === selected.id && (
                           <p className="mt-1 text-xs text-rose-300" role="alert">
-                            {publishState.error}
+                            {docxState.error}
                           </p>
                         )}
                       </div>
                       <button
                         type="button"
-                        onClick={publishSelectedDraft}
-                        disabled={publishState.loading && publishState.draftId === selected.id}
+                        onClick={downloadSelectedDraftDocx}
+                        disabled={docxState.loading && docxState.draftId === selected.id}
                         className="flex shrink-0 items-center gap-1.5 rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-400/15 disabled:opacity-50"
                       >
-                        <Send className="h-3.5 w-3.5" />
-                        {publishState.loading && publishState.draftId === selected.id ? "Publishing…" : "Publish"}
+                        {docxState.loading && docxState.draftId === selected.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                        {docxState.loading && docxState.draftId === selected.id ? "Generating…" : "Download DOCX"}
                       </button>
                     </div>
 

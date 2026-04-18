@@ -279,10 +279,22 @@ async function extractWithFetch(url: string, baseUrl: string) {
     url,
     {
       redirect: "follow",
-      cache: "no-store"
+      cache: "no-store",
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (compatible; QubicSEOAutopilot/1.0; +https://qubic.org) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "accept-language": "en-US,en;q=0.9"
+      }
     },
     HTTP_CLIENT.slowApiTimeoutMs
   );
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} ${response.statusText} for ${url}`);
+  }
+
   const html = await response.text();
   const cleanHtml = html.replace(scriptPattern, " ").replace(stylePattern, " ");
   const title = extractMatch(cleanHtml, titlePattern);

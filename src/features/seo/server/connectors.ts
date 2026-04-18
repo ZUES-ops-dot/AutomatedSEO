@@ -1,6 +1,80 @@
 import { connectors } from "@/features/seo/data/demo-data";
-import { deploymentTarget, getConfiguredEnvKeyCount, getMissingEnvKeys } from "@/features/seo/server/env";
+import { appEnv, deploymentTarget, getConfiguredEnvKeyCount, getMissingEnvKeys } from "@/features/seo/server/env";
 import type { Connector, ConnectorGroup, ConnectorGroupView, ConnectorRuntime, ConnectorState, ConnectorSummary } from "@/features/seo/types";
+
+/**
+ * Runtime env snapshot: reports which sensitive keys are ACTUALLY loaded in
+ * the running Node process right now. This is not cached and evaluates on
+ * each server call, so it's the source of truth for "is my Anthropic key
+ * present on Railway?" kinds of questions.
+ */
+export function getRuntimeEnvSnapshot() {
+  const maskTail = (value: string) => (value.length >= 4 ? value.slice(-4) : value);
+  return {
+    deploymentTarget,
+    nodeEnv: process.env.NODE_ENV ?? "unknown",
+    railwayEnv: process.env.RAILWAY_ENVIRONMENT_NAME ?? null,
+    checks: [
+      {
+        label: "Anthropic API key",
+        env: "ANTHROPIC_API_KEY",
+        configured: appEnv.anthropicApiKey.length > 0,
+        detail:
+          appEnv.anthropicApiKey.length > 0
+            ? `Loaded (\u2026${maskTail(appEnv.anthropicApiKey)}, ${appEnv.anthropicApiKey.length} chars, model ${appEnv.anthropicModel})`
+            : "Not loaded. Set ANTHROPIC_API_KEY in Railway and redeploy."
+      },
+      {
+        label: "Search Console service account email",
+        env: "GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL",
+        configured: appEnv.searchConsoleClientEmail.length > 0,
+        detail:
+          appEnv.searchConsoleClientEmail.length > 0
+            ? `Loaded (${appEnv.searchConsoleClientEmail})`
+            : "Not loaded. Set GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL."
+      },
+      {
+        label: "Search Console service account private key",
+        env: "GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY",
+        configured: appEnv.searchConsolePrivateKey.length > 0,
+        detail:
+          appEnv.searchConsolePrivateKey.length > 0
+            ? `Loaded (${appEnv.searchConsolePrivateKey.length} chars, includes BEGIN marker: ${appEnv.searchConsolePrivateKey.includes("BEGIN")})`
+            : "Not loaded. Paste the private key (including BEGIN/END markers) into GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY."
+      },
+      {
+        label: "Google API key (PageSpeed / CrUX)",
+        env: "GOOGLE_API_KEY",
+        configured: appEnv.googleApiKey.length > 0,
+        detail:
+          appEnv.googleApiKey.length > 0
+            ? `Loaded (\u2026${maskTail(appEnv.googleApiKey)})`
+            : "Not loaded. Set GOOGLE_API_KEY."
+      },
+      {
+        label: "Job secret",
+        env: "JOB_SECRET",
+        configured: appEnv.jobSecret.length > 0,
+        detail:
+          appEnv.jobSecret.length > 0
+            ? "Loaded."
+            : "Not loaded. Needed to call /api/jobs and /api/suggestions HTTP endpoints with Bearer auth."
+      },
+      {
+        label: "Primary site URL",
+        env: "PRIMARY_SITE_URL",
+        configured: appEnv.primarySiteUrl.length > 0,
+        detail: `Using ${appEnv.primarySiteUrl}.`
+      },
+      {
+        label: "Blog site URL + path prefix",
+        env: "BLOG_SITE_URL / BLOG_URL_PATH_PREFIX",
+        configured: appEnv.blogSiteUrl.length > 0,
+        detail: `Base: ${appEnv.blogSiteUrl}. Path filter: ${appEnv.blogUrlPathPrefix || "(none)"}`
+      }
+    ]
+  };
+}
 
 const groupLabels: Record<ConnectorGroup, string> = {
   site_intelligence: "Site intelligence",

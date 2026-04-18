@@ -2,7 +2,11 @@ const defaultEnv = {
   NEXT_PUBLIC_APP_NAME: "Qubic SEO Autopilot",
   PRIMARY_SITE_URL: "https://qubic.org",
   DOCS_SITE_URL: "https://docs.qubic.org",
-  BLOG_SITE_URL: "https://blogs.qubic.org",
+  // Blog content lives under qubic.org/blog-detail/* (Framer site). The
+  // separate "blogs.qubic.org" subdomain does not exist, so we default to the
+  // primary site and filter by BLOG_URL_PATH_PREFIX below.
+  BLOG_SITE_URL: "https://qubic.org",
+  BLOG_URL_PATH_PREFIX: "/blog-detail",
   QUBIC_RPC_BASE_URL: "https://rpc.qubic.org",
   SEARCH_CONSOLE_PROPERTY: "sc-domain:qubic.org",
   GDELT_QUERY: '"Qubic" OR qubic.org',
@@ -27,6 +31,7 @@ export const appEnv = {
   primarySiteUrl: getResolvedEnvValue("PRIMARY_SITE_URL"),
   docsSiteUrl: getResolvedEnvValue("DOCS_SITE_URL"),
   blogSiteUrl: getResolvedEnvValue("BLOG_SITE_URL"),
+  blogUrlPathPrefix: getResolvedEnvValue("BLOG_URL_PATH_PREFIX"),
   qubicRpcBaseUrl: getResolvedEnvValue("QUBIC_RPC_BASE_URL"),
   searchConsoleProperty: getResolvedEnvValue("SEARCH_CONSOLE_PROPERTY"),
   googleApiKey: readEnvValue("GOOGLE_API_KEY"),

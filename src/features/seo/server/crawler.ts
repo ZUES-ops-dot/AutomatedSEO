@@ -76,28 +76,63 @@ function buildIssues(page: Pick<SitePage, "title" | "h1" | "metaDescription" | "
   return issues;
 }
 
-async function fetchSitemapUrls(baseUrl: string) {
+// Use a modern Chrome UA. Many CDNs (Framer, Cloudflare) serve trimmed
+// responses or 403 for unknown UAs. We still identify via an accept-encoding
+// header in logs and respect robots.txt intent.
+const CRAWLER_USER_AGENT =
+  "Mozilla/5.0 (compatible; QubicSEOAutopilot/1.0; +https://qubic.org) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+
+async function fetchSitemapUrls(baseUrl: string, pathFilter?: string) {
+  const sitemapUrl = `${baseUrl.replace(/\/$/, "")}/sitemap.xml`;
   try {
-    const response = await fetchWithTimeout(`${baseUrl.replace(/\/$/, "")}/sitemap.xml`, {
+    const response = await fetchWithTimeout(sitemapUrl, {
       headers: {
-        "user-agent": `${appEnv.appName} crawler`
+        "user-agent": CRAWLER_USER_AGENT,
+        accept: "application/xml,text/xml,*/*;q=0.8"
       },
       cache: "no-store"
     });
 
     if (!response.ok) {
+      logSeoEvent("warn", "Sitemap fetch returned non-OK status.", {
+        sitemapUrl,
+        status: response.status,
+        statusText: response.statusText
+      });
       return [];
     }
 
     const xml = await response.text();
     const matches = xml.matchAll(/<loc>([\s\S]*?)<\/loc>/gi);
 
-    return Array.from(matches)
+    const all = Array.from(matches)
       .map((match) => normalizeUrl(match[1].trim()))
-      .filter((url) => isInternalUrl(url, baseUrl))
-      .slice(0, defaultMaxPages * 2);
+      .filter((url) => isInternalUrl(url, baseUrl));
+
+    const filtered = pathFilter
+      ? all.filter((url) => {
+          try {
+            return new URL(url).pathname.startsWith(pathFilter);
+          } catch {
+            return false;
+          }
+        })
+      : all;
+
+    logSeoEvent("info", "Sitemap fetched successfully.", {
+      sitemapUrl,
+      totalUrls: all.length,
+      filteredUrls: filtered.length,
+      pathFilter: pathFilter ?? null
+    });
+
+    return filtered.slice(0, defaultMaxPages * 2);
   } catch (error) {
-    logSeoEvent("warn", "Sitemap fetch failed.", { baseUrl, error: String(error) });
+    logSeoEvent("warn", "Sitemap fetch failed.", {
+      sitemapUrl,
+      error: error instanceof Error ? error.message : String(error),
+      cause: error instanceof Error && "cause" in error ? String((error as Error & { cause?: unknown }).cause) : undefined
+    });
     return [];
   }
 }
@@ -160,18 +195,41 @@ async function crawlSingleSite(site: SiteScope, maxPages: number, seedUrls?: str
   const baseUrl = getBaseUrl(site);
   const connectorId =
     site === "docs" ? "docs-crawl" : site === "blog" ? "blog-crawl" : "site-crawl";
+  const pathFilter = site === "blog" ? appEnv.blogUrlPathPrefix : undefined;
   let renderedSession: RenderedExtractionSession | null = null;
+
+  const matchesPathFilter = (url: string) => {
+    if (!pathFilter) return true;
+    try {
+      return new URL(url).pathname.startsWith(pathFilter);
+    } catch {
+      return false;
+    }
+  };
+
+  logSeoEvent("info", "Crawl starting.", { site, baseUrl, maxPages, pathFilter: pathFilter ?? null });
 
   try {
     renderedSession = site === "primary" ? await createRenderedExtractionSession() : null;
-    const discoveredSitemapUrls = await fetchSitemapUrls(baseUrl);
-    const queue = Array.from(
-      new Set([normalizeUrl(baseUrl), ...(seedUrls ?? []).map(normalizeUrl), ...discoveredSitemapUrls])
-    )
+    const discoveredSitemapUrls = await fetchSitemapUrls(baseUrl, pathFilter);
+
+    // For blog scope: if sitemap yielded any filtered URLs, use those as seeds
+    // rather than the bare root (which likely won't match pathFilter).
+    const seedPool = [
+      ...(pathFilter && discoveredSitemapUrls.length === 0 ? [normalizeUrl(baseUrl)] : []),
+      ...(pathFilter ? [] : [normalizeUrl(baseUrl)]),
+      ...(seedUrls ?? []).map(normalizeUrl),
+      ...discoveredSitemapUrls
+    ];
+
+    const queue = Array.from(new Set(seedPool))
       .slice(0, Math.max(maxPages, defaultMaxPages))
       .map((url) => ({ url, depth: url === normalizeUrl(baseUrl) ? 0 : 1 }));
+
     const visited = new Set<string>();
     const pages: SitePage[] = [];
+    let skipCount = 0;
+    const skipSamples: Array<{ url: string; error: string }> = [];
 
     while (queue.length > 0 && pages.length < maxPages) {
       const nextEntry = queue.shift();
@@ -186,20 +244,40 @@ async function crawlSingleSite(site: SiteScope, maxPages: number, seedUrls?: str
         continue;
       }
 
+      // Enforce path filter for blog scope. Don't drop the entry URL itself
+      // if it's the only seed (e.g. blog index / landing page).
+      if (pathFilter && !matchesPathFilter(nextUrl) && pages.length > 0) {
+        continue;
+      }
+
       try {
         const page = await buildSitePage(site, nextUrl, baseUrl, nextEntry.depth, renderedSession);
         pages.push(page);
 
         for (const link of page.internalLinks) {
-          if (!visited.has(link) && queue.length < maxPages * 3) {
-            queue.push({ url: link, depth: nextEntry.depth + 1 });
-          }
+          if (visited.has(link) || queue.length >= maxPages * 3) continue;
+          if (pathFilter && !matchesPathFilter(link)) continue;
+          queue.push({ url: link, depth: nextEntry.depth + 1 });
         }
       } catch (error) {
-        logSeoEvent("warn", "Page crawl failed; skipping URL.", { url: nextUrl, error: String(error) });
+        skipCount++;
+        const errMsg = error instanceof Error ? error.message : String(error);
+        if (skipSamples.length < 5) {
+          skipSamples.push({ url: nextUrl, error: errMsg });
+        }
+        logSeoEvent("warn", "Page crawl failed; skipping URL.", { url: nextUrl, error: errMsg });
         continue;
       }
     }
+
+    logSeoEvent("info", "Crawl completed.", {
+      site,
+      baseUrl,
+      pagesCrawled: pages.length,
+      pagesSkipped: skipCount,
+      sitemapUrlsFound: discoveredSitemapUrls.length,
+      skipSamples
+    });
 
     await saveSitePages(pages);
 
