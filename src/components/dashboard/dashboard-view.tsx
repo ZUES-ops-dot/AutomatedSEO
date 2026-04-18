@@ -26,6 +26,23 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } }
 };
 
+function formatRelativeTime(value: string | null | undefined): string {
+  if (!value) return "never";
+  const ms = Date.parse(value);
+  if (Number.isNaN(ms)) return value;
+  const diffMs = Date.now() - ms;
+  const abs = Math.abs(diffMs);
+  const m = abs / 60000;
+  const h = m / 60;
+  const d = h / 24;
+  let rel: string;
+  if (m < 1) rel = "just now";
+  else if (m < 60) rel = `${Math.round(m)} min`;
+  else if (h < 48) rel = `${Math.round(h)} hr`;
+  else rel = `${Math.round(d)} day`;
+  return diffMs >= 0 ? (rel === "just now" ? rel : `${rel} ago`) : `in ${rel}`;
+}
+
 export function DashboardView({ data }: DashboardViewProps) {
   const {
     connectors,
@@ -232,7 +249,7 @@ export function DashboardView({ data }: DashboardViewProps) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-semibold text-white">{job.name}</p>
-                    <p className="mono text-[10.5px] text-white/38">{job.lastRun}</p>
+                    <p className="mono text-[10.5px] text-white/38">{formatRelativeTime(job.lastRun)}</p>
                   </div>
                   <Badge tone={statusTone === "done" ? "lime" : statusTone === "running" ? "cyan" : "slate"}>
                     {statusTone}
@@ -242,11 +259,38 @@ export function DashboardView({ data }: DashboardViewProps) {
             })}
             {activeSchedules.length > 0 ? (
               <div className="mt-3 space-y-1.5 border-t border-white/[0.06] pt-3">
-                {activeSchedules.map((schedule) => (
-                  <p key={schedule.id} className="mono text-[10px] text-white/35">
-                    {schedule.job}: next {schedule.nextRunAt ?? "pending"}
-                  </p>
-                ))}
+                <p className="text-[10.5px] leading-5 text-white/45">
+                  <strong className="text-white/70">Scheduling:</strong> cron runs when a background worker is configured
+                  (<code className="mono text-[10px]">REDIS_URL</code> + <code className="mono text-[10px]">USE_JOB_QUEUE=true</code> + <code className="mono text-[10px]">npm run worker:seo</code>).
+                  Otherwise, use the <strong className="text-white/70">Run cycle</strong> button above to trigger manually.
+                </p>
+                {activeSchedules.map((schedule) => {
+                  const nextMs = schedule.nextRunAt ? Date.parse(schedule.nextRunAt) : NaN;
+                  const now = Date.now();
+                  let label: string;
+                  if (Number.isNaN(nextMs)) {
+                    label = "pending";
+                  } else {
+                    const diffMs = nextMs - now;
+                    const diffHr = Math.abs(diffMs) / (1000 * 60 * 60);
+                    const rel = diffHr < 1
+                      ? `${Math.round(Math.abs(diffMs) / 60000)} min`
+                      : diffHr < 48
+                      ? `${Math.round(diffHr)} hr`
+                      : `${Math.round(diffHr / 24)} day`;
+                    label = diffMs >= 0 ? `in ${rel}` : `${rel} overdue`;
+                  }
+                  return (
+                    <div key={schedule.id} className="flex items-center justify-between text-[10.5px]">
+                      <span className="text-white/55">
+                        {titleCase(schedule.job.replace(/-/g, " "))} · {schedule.cadence}
+                      </span>
+                      <span className={`mono ${label.includes("overdue") ? "text-amber-300" : "text-white/35"}`}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             ) : null}
           </div>
