@@ -3,13 +3,44 @@ import type { NextRequest } from "next/server";
 import { appEnv } from "@/features/seo/server/env";
 import { jsonError } from "@/lib/api-error";
 
-function isSameOriginRequest(request: NextRequest) {
-  const origin = request.headers.get("origin")?.trim();
-  if (!origin) {
-    return false;
+function readRequestOrigin(request: NextRequest) {
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  if (forwardedProto && forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
   }
 
-  return origin === request.nextUrl.origin;
+  const host = request.headers.get("host")?.trim();
+  if (host) {
+    const protocol = forwardedProto ?? request.nextUrl.protocol.replace(/:$/, "");
+    return `${protocol}://${host}`;
+  }
+
+  return request.nextUrl.origin;
+}
+
+function matchesRequestOrigin(value: string, requestOrigin: string) {
+  try {
+    return new URL(value).origin === requestOrigin;
+  } catch {
+    return false;
+  }
+}
+
+function isSameOriginRequest(request: NextRequest) {
+  const requestOrigin = readRequestOrigin(request);
+  const origin = request.headers.get("origin")?.trim();
+  if (origin === requestOrigin) {
+    return true;
+  }
+
+  const referer = request.headers.get("referer")?.trim();
+  if (referer && matchesRequestOrigin(referer, requestOrigin)) {
+    return true;
+  }
+
+  const fetchSite = request.headers.get("sec-fetch-site")?.trim().toLowerCase();
+  return fetchSite === "same-origin";
 }
 
 function readProvidedSecret(request: NextRequest) {
