@@ -366,7 +366,7 @@ export interface JobSchedule {
   enabled: boolean;
   lastRunAt: string | null;
   nextRunAt: string | null;
-  lastStatus: "success" | "error" | "fallback" | null;
+  lastStatus: "success" | "error" | "fallback" | "started" | null;
   detail: string;
 }
 
@@ -406,7 +406,8 @@ export interface GeneratedDraftResult {
   qualityReport: ContentQualityReport;
 }
 
-export type SearchSignalProvider = "google_search_console" | "manual_csv" | "demo_seed";
+/** `google_search_console` is legacy-only (older persisted rows). New syncs use Morningscore. */
+export type SearchSignalProvider = "morningscore" | "manual_csv" | "demo_seed" | "google_search_console";
 
 export interface SearchPerformanceRow {
   id: string;
@@ -432,6 +433,7 @@ export type ConnectorRunProvider =
   | "site_crawl"
   | "internal_link_audit"
   | "pagespeed"
+  | "morningscore"
   | "github"
   | "rss"
   | "gdelt"

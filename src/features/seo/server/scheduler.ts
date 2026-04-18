@@ -185,10 +185,12 @@ export async function runDueScheduledJobs(referenceIso = new Date().toISOString(
       const updated = normalizeSchedule({
         ...schedule,
         lastRunAt: new Date().toISOString(),
-        lastStatus: "success"
+        lastStatus: schedule.job === "full-cycle" ? "started" : "success"
       });
       const index = nextSchedules.findIndex((item) => item.id === schedule.id);
-      nextSchedules[index] = updated;
+      if (index >= 0) {
+        nextSchedules[index] = updated;
+      }
     } catch (error) {
       ran.push({
         scheduleId: schedule.id,
@@ -202,7 +204,9 @@ export async function runDueScheduledJobs(referenceIso = new Date().toISOString(
         lastStatus: "error"
       });
       const index = nextSchedules.findIndex((item) => item.id === schedule.id);
-      nextSchedules[index] = updated;
+      if (index >= 0) {
+        nextSchedules[index] = updated;
+      }
     }
   }
 

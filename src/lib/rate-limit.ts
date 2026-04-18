@@ -44,7 +44,7 @@ async function rateLimitWithRedis(
   max: number,
   windowMs: number
 ): Promise<NextResponse | null> {
-  await redis.connect().catch(() => undefined);
+  await redis.connect();
   const n = await redis.incr(key);
   if (n === 1) {
     await redis.pexpire(key, windowMs);

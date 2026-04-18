@@ -17,6 +17,11 @@ export async function GET(request: NextRequest) {
     return limited;
   }
 
+  const authError = requireApiAuthorization(request);
+  if (authError) {
+    return authError;
+  }
+
   try {
     const q = request.nextUrl.searchParams.get("q") ?? "";
     const blogPages = await getSitePages("blog");

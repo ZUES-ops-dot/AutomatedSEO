@@ -27,7 +27,7 @@ const opportunityCandidates: OpportunityCandidate[] = [
       "Docs page has stale code samples and no FAQ section.",
       "Internal links from ecosystem pages are weak for this topic cluster."
     ],
-    sourceTypes: ["search_console", "docs_crawl", "internal_link_graph"],
+    sourceTypes: ["morningscore", "docs_crawl", "internal_link_graph"],
     businessRelevance: 92,
     demandSignal: 80,
     ctrGap: 85,
@@ -71,7 +71,7 @@ const opportunityCandidates: OpportunityCandidate[] = [
       "No clean canonical page currently answers wallet setup and troubleshooting together.",
       "The page would support both onboarding and ecosystem conversion paths."
     ],
-    sourceTypes: ["search_console", "community_signal", "docs_crawl"],
+    sourceTypes: ["morningscore", "community_signal", "docs_crawl"],
     businessRelevance: 95,
     demandSignal: 78,
     ctrGap: 65,
@@ -162,7 +162,7 @@ const opportunityCandidates: OpportunityCandidate[] = [
       "Neither page is deep enough to justify separate rankings.",
       "The current architecture creates avoidable cannibalization risk."
     ],
-    sourceTypes: ["site_crawl", "content_similarity", "search_console"],
+    sourceTypes: ["site_crawl", "content_similarity", "morningscore"],
     businessRelevance: 70,
     demandSignal: 50,
     ctrGap: 40,
@@ -206,7 +206,7 @@ const opportunityCandidates: OpportunityCandidate[] = [
       "Metadata and section hierarchy are underspecified for current intent coverage.",
       "This page can pass relevance into launch-specific and wallet-support content."
     ],
-    sourceTypes: ["site_crawl", "internal_link_graph", "search_console"],
+    sourceTypes: ["site_crawl", "internal_link_graph", "morningscore"],
     businessRelevance: 88,
     demandSignal: 67,
     ctrGap: 72,
@@ -323,39 +323,41 @@ export const connectors: Connector[] = [
   },
   {
     id: "search-console",
-    name: "Google Search Console",
+    name: "Morningscore SEO API",
     group: "google_signals",
-    description: "Pulls queries, pages, impressions, clicks, CTR, and ranking shifts.",
+    description:
+      "Keyword rankings, estimated traffic, landing pages, Morningscore value, Linkscore, and onsite Healthscore via api.morningscore.io.",
     cadence: "Daily",
     status: "attention",
     healthScore: 63,
-    auth: "Verified property and Google credentials",
-    outputs: ["query gaps", "page performance rows", "CTR deltas"],
-    envKeys: ["GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL", "GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY"]
+    auth: "Bearer API key (Morningscore dashboard)",
+    outputs: ["ranked keywords", "traffic value", "visibility and link metrics"],
+    envKeys: ["MORNINGSCORE_API_KEY"]
   },
   {
     id: "pagespeed",
-    name: "PageSpeed Insights",
+    name: "Morningscore Onsite",
     group: "google_signals",
-    description: "Checks core web vitals and Lighthouse opportunities for priority URLs.",
+    description:
+      "Derives per-URL onsite scores from Morningscore crawl (issues/tasks), including page-speed-related validators—no Google API.",
     cadence: "Daily",
     status: "connected",
     healthScore: 88,
-    auth: "API key recommended",
-    outputs: ["lab metrics", "field insights", "performance opportunities"],
-    envKeys: ["GOOGLE_API_KEY"]
+    auth: "Morningscore API key",
+    outputs: ["onsite scores", "issue-weighted priorities", "task impact"],
+    envKeys: ["MORNINGSCORE_API_KEY"]
   },
   {
     id: "crux",
     name: "Chrome UX Report",
     group: "google_signals",
-    description: "Tracks real-user page experience trends where CrUX coverage exists.",
+    description: "Optional CrUX-style trends; superseded for this deployment by Morningscore onsite + page_speed issues.",
     cadence: "Daily",
     status: "planned",
     healthScore: 44,
-    auth: "API key",
-    outputs: ["INP", "CLS", "LCP trend history"],
-    envKeys: ["GOOGLE_API_KEY"]
+    auth: "Not wired",
+    outputs: ["field metrics"],
+    envKeys: []
   },
   {
     id: "gdelt",
@@ -419,7 +421,7 @@ export const jobRuns: JobRun[] = [
   },
   {
     id: "job-search-console-sync",
-    name: "Search Console sync",
+    name: "Morningscore sync",
     cadence: "Daily",
     status: "warning",
     lastRun: "Yesterday 06:15",

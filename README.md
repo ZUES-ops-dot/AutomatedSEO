@@ -146,20 +146,18 @@ Common variables:
 - `DATABASE_URL` — set from Railway Postgres (required for durable persistence; without it the app uses ephemeral `.data/` on disk)
 - `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` — cloud LLM for briefs/drafts (recommended on Railway; Ollama is local-only)
 - `JOB_SECRET` — protects `POST /api/jobs`; use with cron or CI
-- `PRIMARY_SITE_URL`, `DOCS_SITE_URL`, `SEARCH_CONSOLE_PROPERTY`
-- `GOOGLE_API_KEY` — PageSpeed Insights
-- `GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL`, `GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY` — GSC API (paste private key with `\n` for newlines)
+- `PRIMARY_SITE_URL`, `DOCS_SITE_URL`
+- `MORNINGSCORE_API_KEY`, optional `MORNINGSCORE_DOMAIN_ID` — keywords, onsite crawl/scores, issues, backlinks, dashboard KPIs ([Morningscore API](https://api.morningscore.io))
 - `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_CONTENT_*` — GitHub sync / publish
 - `RSS_FEED_URLS`, `GDELT_QUERY`
 - `QUBIC_RPC_BASE_URL` — display/status only unless you extend ingestion
 
-For live Search Console sync, the service account behind `GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL` must also be granted access to the Search Console property configured in `SEARCH_CONSOLE_PROPERTY`.
-If you do not have that access yet, the app now supports manual/demo fallback search-signal sync so you can keep building the workflow.
+If `MORNINGSCORE_API_KEY` is not set, search-signal sync uses manual rows or demo seed data so you can still build the workflow.
 
 Real integrations that require credentials or service setup include:
 
-- Google Search Console
-- PageSpeed / CrUX API key usage
+- Morningscore SEO API (search performance + dashboard KPIs)
+- Morningscore onsite metrics (replaces Google PageSpeed for this app)
 - GitHub token-backed sync
 - GitHub content publishing destination
 - RSS source configuration
@@ -171,7 +169,7 @@ This repo includes `railway.toml` (Nixpacks build, `npm run start`, health check
 
 1. **Create a Railway project** and deploy from this GitHub repository.
 2. **Add PostgreSQL** (Plugins → PostgreSQL). Link **`DATABASE_URL`** on the Next.js service to the Postgres connection string (Railway’s variable reference, e.g. `${{Postgres.DATABASE_URL}}`, or copy from the Postgres service).
-3. **Set environment variables** in the web service (see `.env.example`). For **Search Console**, put the service account private key in **`GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY`** as a single line with `\n` where line breaks belong (the app converts `\n` to real newlines).
+3. **Set environment variables** in the web service (see `.env.example`). For **Morningscore**, add **`MORNINGSCORE_API_KEY`** from your Morningscore dashboard (Settings → API).
 4. **Anthropic**: set **`ANTHROPIC_API_KEY`** for production LLM generation. You do **not** need Ollama on Railway.
 5. **Redis**: the application **does not** use Redis; persistence goes through **Postgres** (`pg`). You can skip Redis unless you add custom caching later.
 6. **Scheduled jobs**: long runs should call **`POST /api/jobs`** with body `{ "job": "full-cycle" }` (or a specific job name) and header **`Authorization: Bearer <JOB_SECRET>`** when `JOB_SECRET` is set. Use [Railway Cron Jobs](https://docs.railway.app/reference/cron-jobs) or an external scheduler.
@@ -202,8 +200,8 @@ If `ANTHROPIC_API_KEY` is not configured, the generation routes fall back to det
 
 The first live connector is now wired through `POST /api/connectors/search-console`.
 
-- `google_search_console`
-  - preferred when the service account has Search Console access
+- `morningscore`
+  - preferred when `MORNINGSCORE_API_KEY` is set (keyword rankings + estimated traffic)
 - `manual_csv`
   - accepts manual rows in JSON for flexible fallback workflows
 - `demo_seed`

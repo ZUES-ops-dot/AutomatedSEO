@@ -1,20 +1,10 @@
 import { appEnv } from "@/features/seo/server/env";
-import { HTTP_CLIENT } from "@/features/seo/server/seo-constants";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { logSeoEvent } from "@/lib/seo-log";
-import {
-  getSearchPerformanceRows,
-  getSitePages,
-  saveConnectorRun,
-  savePageSpeedSnapshots,
-  saveSourceEvents
-} from "@/features/seo/server/storage";
-import type { ConnectorRun, ConnectorRunProvider, PageSpeedSnapshot, SourceEvent } from "@/features/seo/types";
+import { saveConnectorRun, saveSourceEvents } from "@/features/seo/server/storage";
+import type { ConnectorRun, ConnectorRunProvider, SourceEvent } from "@/features/seo/types";
 
-interface PageSpeedInput {
-  strategy?: PageSpeedSnapshot["strategy"];
-  urls?: string[];
-}
+export { syncMorningscoreOnsiteSnapshots as syncPageSpeed } from "@/features/seo/server/morningscore-onsite";
 
 interface GitHubInput {
   repo?: string;
@@ -73,104 +63,6 @@ function buildRun(
     detail,
     recordCount,
     metadata
-  };
-}
-
-async function resolvePriorityUrls() {
-  const rows = await getSearchPerformanceRows();
-  const rowUrls = rows.map((row) => row.page).filter(Boolean);
-  const pages = await getSitePages();
-  const pageUrls = pages.map((page) => page.url);
-
-  return uniqueValues([...rowUrls, ...pageUrls]).slice(0, 8);
-}
-
-export async function syncPageSpeed(input: PageSpeedInput = {}) {
-  const startedAt = new Date().toISOString();
-  const strategy = input.strategy ?? "mobile";
-
-  if (!appEnv.googleApiKey) {
-    const run = buildRun(
-      "pagespeed",
-      "pagespeed",
-      "error",
-      "Google API key is missing, so PageSpeed snapshots could not be fetched.",
-      0,
-      startedAt,
-      { strategy }
-    );
-
-    await saveConnectorRun(run);
-    return {
-      snapshots: [] as PageSpeedSnapshot[],
-      run
-    };
-  }
-
-  const urls = input.urls && input.urls.length > 0 ? uniqueValues(input.urls) : await resolvePriorityUrls();
-  const snapshots: PageSpeedSnapshot[] = [];
-
-  for (const url of urls) {
-    try {
-      const response = await fetchWithTimeout(
-        `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&key=${appEnv.googleApiKey}`,
-        { cache: "no-store" },
-        HTTP_CLIENT.slowApiTimeoutMs
-      );
-
-      if (!response.ok) {
-        continue;
-      }
-
-      const payload = (await response.json()) as {
-        lighthouseResult?: {
-          categories?: { performance?: { score?: number } };
-          audits?: Record<string, { numericValue?: number }>;
-        };
-      };
-
-      const audits = payload.lighthouseResult?.audits ?? {};
-      const capturedAt = new Date().toISOString();
-
-      snapshots.push({
-        id: `pagespeed-${strategy}-${slugify(url)}-${capturedAt.slice(0, 10)}`,
-        url,
-        strategy,
-        performanceScore: Math.round((payload.lighthouseResult?.categories?.performance?.score ?? 0) * 100),
-        largestContentfulPaint: audits["largest-contentful-paint"]?.numericValue ?? null,
-        cumulativeLayoutShift: audits["cumulative-layout-shift"]?.numericValue ?? null,
-        interactionToNextPaint: audits["interaction-to-next-paint"]?.numericValue ?? null,
-        firstContentfulPaint: audits["first-contentful-paint"]?.numericValue ?? null,
-        capturedAt
-      });
-    } catch (error) {
-      logSeoEvent("warn", "PageSpeed snapshot fetch failed for URL.", {
-        url,
-        error: error instanceof Error ? error.message : String(error)
-      });
-      continue;
-    }
-  }
-
-  await savePageSpeedSnapshots(snapshots);
-
-  const run = buildRun(
-    "pagespeed",
-    "pagespeed",
-    snapshots.length > 0 ? "success" : "error",
-    snapshots.length > 0
-      ? `Stored ${snapshots.length} PageSpeed snapshots for priority URLs.`
-      : "PageSpeed did not return any usable snapshots.",
-    snapshots.length,
-    startedAt,
-    { strategy, urlCount: urls.length }
-  );
-
-  await saveConnectorRun(run);
-
-  return {
-    snapshots,
-    run
   };
 }
 

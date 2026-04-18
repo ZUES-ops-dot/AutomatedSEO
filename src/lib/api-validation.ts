@@ -138,7 +138,7 @@ export const longFormDocxPostSchema = z.object({
 
 export const searchSignalPostSchema = z
   .object({
-    provider: z.enum(["google_search_console", "manual_csv", "demo_seed"]).optional(),
+    provider: z.enum(["morningscore", "manual_csv", "demo_seed"]).optional(),
     property: z.string().max(500).optional(),
     startDate: z.string().max(32).optional(),
     endDate: z.string().max(32).optional(),

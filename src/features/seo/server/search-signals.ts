@@ -1,22 +1,22 @@
-import { createSign } from "crypto";
-
 import { opportunities } from "@/features/seo/data/demo-data";
 import { appEnv } from "@/features/seo/server/env";
+import {
+  fetchMorningscoreKeywordPages,
+  resolveMorningscoreDomainId,
+  sleepMs,
+  MORNINGSCORE_REQUEST_GAP_MS
+} from "@/features/seo/server/morningscore-api";
 import { getLatestConnectorRun, getSearchPerformanceRows, saveConnectorRun, saveSearchPerformanceRows } from "@/features/seo/server/storage";
-import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import type { ConnectorRun, SearchPerformanceRow, SearchSignalProvider } from "@/features/seo/types";
-
-const googleScope = "https://www.googleapis.com/auth/webmasters.readonly";
-
-type SearchDimension = "query" | "page" | "country" | "device";
 
 export interface SearchSignalInput {
   provider?: SearchSignalProvider;
+  /** Morningscore `global_domain_identifier` (optional if domain matches `PRIMARY_SITE_URL`). */
   property?: string;
   startDate?: string;
   endDate?: string;
   rowLimit?: number;
-  dimensions?: SearchDimension[];
+  dimensions?: string[];
   manualRows?: Array<{
     query: string;
     page: string;
@@ -31,6 +31,7 @@ export interface SearchSignalInput {
 
 export interface SearchSignalStatus {
   configured: boolean;
+  /** Morningscore domain id when resolved, or empty. */
   property: string;
   preferredProvider: SearchSignalProvider;
   availableProviders: SearchSignalProvider[];
@@ -46,60 +47,6 @@ export interface SearchSignalSyncResult {
   availableProviders: SearchSignalProvider[];
 }
 
-function base64UrlEncode(value: string) {
-  return Buffer.from(value)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-}
-
-function signJwt(payload: Record<string, number | string>) {
-  const header = base64UrlEncode(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const body = base64UrlEncode(JSON.stringify(payload));
-  const signer = createSign("RSA-SHA256");
-  signer.update(`${header}.${body}`);
-  signer.end();
-  const signature = signer.sign(appEnv.searchConsolePrivateKey, "base64url");
-  return `${header}.${body}.${signature}`;
-}
-
-function getIsoDateDaysAgo(daysAgo: number) {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() - daysAgo);
-  return date.toISOString().slice(0, 10);
-}
-
-function getAvailableProviders(): SearchSignalProvider[] {
-  const providers: SearchSignalProvider[] = ["manual_csv", "demo_seed"];
-
-  if (appEnv.searchConsoleClientEmail.length > 0 && appEnv.searchConsolePrivateKey.length > 0) {
-    providers.unshift("google_search_console");
-  }
-
-  return providers;
-}
-
-function resolveProvider(input: SearchSignalInput): SearchSignalProvider {
-  if (input.provider === "manual_csv") {
-    return input.manualRows && input.manualRows.length > 0 ? "manual_csv" : "demo_seed";
-  }
-
-  if (input.provider === "google_search_console") {
-    return getAvailableProviders().includes("google_search_console") ? "google_search_console" : "demo_seed";
-  }
-
-  if (input.provider === "demo_seed") {
-    return "demo_seed";
-  }
-
-  if (input.manualRows && input.manualRows.length > 0) {
-    return "manual_csv";
-  }
-
-  return getAvailableProviders().includes("google_search_console") ? "google_search_console" : "demo_seed";
-}
-
 function buildRowId(provider: SearchSignalProvider, query: string, page: string, capturedAt: string) {
   const slug = `${provider}-${query}-${page}`
     .toLowerCase()
@@ -111,7 +58,7 @@ function buildRowId(provider: SearchSignalProvider, query: string, page: string,
 }
 
 function buildRunId(provider: SearchSignalProvider) {
-  return `run-search-console-${provider}-${Date.now()}`;
+  return `run-search-signals-${provider}-${Date.now()}`;
 }
 
 function buildConnectorRun(
@@ -135,107 +82,34 @@ function buildConnectorRun(
   };
 }
 
-async function getGoogleAccessToken() {
-  const now = Math.floor(Date.now() / 1000);
-  const assertion = signJwt({
-    iss: appEnv.searchConsoleClientEmail,
-    scope: googleScope,
-    aud: "https://oauth2.googleapis.com/token",
-    exp: now + 3600,
-    iat: now
-  });
+function getAvailableProviders(): SearchSignalProvider[] {
+  const providers: SearchSignalProvider[] = ["manual_csv", "demo_seed"];
 
-  const response = await fetchWithTimeout("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: {
-      "content-type": "application/x-www-form-urlencoded"
-    },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`Google OAuth failed with status ${response.status}.`);
+  if (appEnv.morningscoreApiKey.length > 0) {
+    providers.unshift("morningscore");
   }
 
-  const payload = (await response.json()) as {
-    access_token?: string;
-  };
-
-  if (!payload.access_token) {
-    throw new Error("Google OAuth did not return an access token.");
-  }
-
-  return payload.access_token;
+  return providers;
 }
 
-async function fetchGoogleSearchConsoleRows(input: SearchSignalInput, runId: string): Promise<SearchPerformanceRow[]> {
-  const property = input.property ?? appEnv.searchConsoleProperty;
-  const startDate = input.startDate ?? getIsoDateDaysAgo(28);
-  const endDate = input.endDate ?? getIsoDateDaysAgo(1);
-  const rowLimit = input.rowLimit ?? 25;
-  const dimensions = input.dimensions ?? ["query", "page"];
-  const accessToken = await getGoogleAccessToken();
-  const capturedAt = new Date().toISOString();
-
-  const response = await fetchWithTimeout(
-    `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(property)}/searchAnalytics/query`,
-    {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${accessToken}`,
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        startDate,
-        endDate,
-        dimensions,
-        rowLimit,
-        dataState: "all"
-      })
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Search Console query failed with status ${response.status}.`);
+function resolveProvider(input: SearchSignalInput): SearchSignalProvider {
+  if (input.provider === "manual_csv") {
+    return input.manualRows && input.manualRows.length > 0 ? "manual_csv" : "demo_seed";
   }
 
-  const payload = (await response.json()) as {
-    rows?: Array<{
-      keys?: string[];
-      clicks?: number;
-      impressions?: number;
-      ctr?: number;
-      position?: number;
-    }>;
-  };
+  if (input.provider === "morningscore") {
+    return getAvailableProviders().includes("morningscore") ? "morningscore" : "demo_seed";
+  }
 
-  return (payload.rows ?? []).map((row, index) => {
-    const keys = row.keys ?? [];
-    const getKey = (dimension: SearchDimension) => {
-      const dimensionIndex = dimensions.indexOf(dimension);
-      return dimensionIndex >= 0 ? keys[dimensionIndex] ?? "" : "";
-    };
-    const query = getKey("query") || `untitled-query-${index + 1}`;
-    const page = getKey("page") || appEnv.primarySiteUrl;
+  if (input.provider === "demo_seed") {
+    return "demo_seed";
+  }
 
-    return {
-      id: buildRowId("google_search_console", query, page, capturedAt),
-      provider: "google_search_console",
-      query,
-      page,
-      clicks: row.clicks ?? 0,
-      impressions: row.impressions ?? 0,
-      ctr: row.ctr ?? 0,
-      position: row.position ?? 0,
-      country: getKey("country") || undefined,
-      device: getKey("device") || undefined,
-      sourceRunId: runId,
-      capturedAt
-    };
-  });
+  if (input.manualRows && input.manualRows.length > 0) {
+    return "manual_csv";
+  }
+
+  return getAvailableProviders().includes("morningscore") ? "morningscore" : "demo_seed";
 }
 
 function normalizeManualRows(input: SearchSignalInput, runId: string): SearchPerformanceRow[] {
@@ -282,15 +156,83 @@ function buildDemoRows(runId: string): SearchPerformanceRow[] {
   }));
 }
 
+/**
+ * Map Morningscore keyword rows into the app's SearchPerformanceRow shape.
+ * Uses search volume (`sv`) as impressions and estimated traffic (`est_traffic`) as clicks (CTR derived).
+ */
+async function fetchMorningscoreRows(
+  input: SearchSignalInput,
+  runId: string
+): Promise<{ rows: SearchPerformanceRow[]; domainId: string }> {
+  const apiKey = appEnv.morningscoreApiKey;
+  if (!apiKey) {
+    throw new Error("Morningscore API key is not configured.");
+  }
+
+  const domainId = await resolveMorningscoreDomainId(apiKey, input.property ?? appEnv.morningscoreDomainId, appEnv.primarySiteUrl);
+  await sleepMs(MORNINGSCORE_REQUEST_GAP_MS);
+
+  const maxRows = Math.min(Math.max(input.rowLimit ?? 500, 1), 5000);
+  const keywords = await fetchMorningscoreKeywordPages(apiKey, domainId, {
+    maxRows,
+    perPage: Math.min(200, maxRows)
+  });
+
+  const capturedAt = new Date().toISOString();
+
+  const rows = keywords.map((row, index) => {
+    const page = row.full_landing_page ?? row.landing_page ?? appEnv.primarySiteUrl;
+    const query = row.kw?.trim() || `keyword-${index + 1}`;
+    const impressions = Math.max(0, Math.round(row.sv ?? 0));
+    const clicks = Math.max(0, Math.round(row.est_traffic ?? 0));
+    const ctr = impressions > 0 ? Math.min(1, clicks / impressions) : 0;
+    const position = row.position ?? 100;
+
+    return {
+      id: buildRowId("morningscore", query, page, capturedAt),
+      provider: "morningscore" as const,
+      query,
+      page,
+      clicks,
+      impressions,
+      ctr,
+      position,
+      country: row.geotarget?.country_code ?? row.gl ?? undefined,
+      sourceRunId: runId,
+      capturedAt
+    };
+  });
+
+  return { rows, domainId };
+}
+
+/** Probe connectivity (used for status when domain id is not set). */
+async function tryResolveDomainLabel(): Promise<string> {
+  if (!appEnv.morningscoreApiKey) {
+    return "";
+  }
+  try {
+    const id = await resolveMorningscoreDomainId(
+      appEnv.morningscoreApiKey,
+      appEnv.morningscoreDomainId,
+      appEnv.primarySiteUrl
+    );
+    return id;
+  } catch {
+    return appEnv.morningscoreDomainId || "";
+  }
+}
+
 export async function getSearchSignalStatus(): Promise<SearchSignalStatus> {
   const availableProviders = getAvailableProviders();
   const lastRun = await getLatestConnectorRun("search-console");
   const storedRows = await getSearchPerformanceRows();
+  const resolvedDomain = await tryResolveDomainLabel();
 
   return {
-    configured: availableProviders.includes("google_search_console"),
-    property: appEnv.searchConsoleProperty,
-    preferredProvider: availableProviders.includes("google_search_console") ? "google_search_console" : "manual_csv",
+    configured: availableProviders.includes("morningscore"),
+    property: resolvedDomain || appEnv.morningscoreDomainId || appEnv.primarySiteUrl,
+    preferredProvider: availableProviders.includes("morningscore") ? "morningscore" : "manual_csv",
     availableProviders,
     lastRun,
     storedRowCount: storedRows.length
@@ -305,27 +247,29 @@ export async function syncSearchSignals(input: SearchSignalInput = {}): Promise<
 
   try {
     const provisionalRunId = buildRunId(provider);
+    const morningscoreBundle =
+      provider === "morningscore" ? await fetchMorningscoreRows(input, provisionalRunId) : null;
     const rows =
-      provider === "google_search_console"
-        ? await fetchGoogleSearchConsoleRows(input, provisionalRunId)
+      provider === "morningscore"
+        ? morningscoreBundle!.rows
         : provider === "manual_csv"
           ? normalizeManualRows(input, provisionalRunId)
           : buildDemoRows(provisionalRunId);
 
     const run = buildConnectorRun(
       provider,
-      provider === "google_search_console" ? "success" : "fallback",
-      provider === "google_search_console"
-        ? `Fetched ${rows.length} Search Console rows for ${input.property ?? appEnv.searchConsoleProperty}.`
+      provider === "morningscore" ? "success" : "fallback",
+      provider === "morningscore"
+        ? `Fetched ${rows.length} Morningscore keyword rows (traffic + rankings).`
         : provider === "manual_csv"
           ? `Stored ${rows.length} manual search performance rows as a flexible fallback.`
-          : `Stored ${rows.length} seeded search performance rows because live Search Console access is unavailable.`,
+          : `Stored ${rows.length} seeded search performance rows because live Morningscore access is unavailable.`,
       rows.length,
       startedAt,
       {
-        property: input.property ?? appEnv.searchConsoleProperty,
-        startDate: input.startDate ?? getIsoDateDaysAgo(28),
-        endDate: input.endDate ?? getIsoDateDaysAgo(1)
+        ...(morningscoreBundle?.domainId ? { domainId: morningscoreBundle.domainId } : {}),
+        primarySite: appEnv.primarySiteUrl,
+        rowLimit: input.rowLimit ?? 500
       }
     );
 

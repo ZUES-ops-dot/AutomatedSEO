@@ -8,7 +8,6 @@ const defaultEnv = {
   BLOG_SITE_URL: "https://qubic.org",
   BLOG_URL_PATH_PREFIX: "/blog-detail",
   QUBIC_RPC_BASE_URL: "https://rpc.qubic.org",
-  SEARCH_CONSOLE_PROPERTY: "sc-domain:qubic.org",
   GDELT_QUERY: '"Qubic" OR qubic.org',
   ANTHROPIC_MODEL: "claude-3-5-sonnet-latest"
 } as const;
@@ -33,11 +32,10 @@ export const appEnv = {
   blogSiteUrl: getResolvedEnvValue("BLOG_SITE_URL"),
   blogUrlPathPrefix: getResolvedEnvValue("BLOG_URL_PATH_PREFIX"),
   qubicRpcBaseUrl: getResolvedEnvValue("QUBIC_RPC_BASE_URL"),
-  searchConsoleProperty: getResolvedEnvValue("SEARCH_CONSOLE_PROPERTY"),
-  googleApiKey: readEnvValue("GOOGLE_API_KEY"),
-  searchConsoleClientEmail: readEnvValue("GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL"),
-  searchConsolePrivateKey: readEnvValue("GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY").replace(/\\n/g, "\n"),
-  ga4PropertyId: readEnvValue("GA4_PROPERTY_ID"),
+  /** Bearer token from Morningscore → Settings → API. */
+  morningscoreApiKey: readEnvValue("MORNINGSCORE_API_KEY"),
+  /** `global_domain_identifier` from GET /v1/domains — optional if hostname matches PRIMARY_SITE_URL. */
+  morningscoreDomainId: readEnvValue("MORNINGSCORE_DOMAIN_ID"),
   coingeckoApiKey: readEnvValue("COINGECKO_API_KEY"),
   gdeltQuery: getResolvedEnvValue("GDELT_QUERY"),
   rssFeedUrls: readEnvValue("RSS_FEED_URLS")
@@ -80,13 +78,10 @@ export function getEnvironmentOverview() {
     primarySiteUrl: appEnv.primarySiteUrl,
     docsSiteUrl: appEnv.docsSiteUrl,
     blogSiteUrl: appEnv.blogSiteUrl,
-    searchConsoleProperty: appEnv.searchConsoleProperty,
     connectors: {
-      searchConsoleConfigured: hasAllEnvKeys([
-        "GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL",
-        "GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY"
-      ]),
-      pagespeedConfigured: hasAllEnvKeys(["GOOGLE_API_KEY"]),
+      morningscoreConfigured: appEnv.morningscoreApiKey.length > 0,
+      /** Onsite snapshots use the same Morningscore key as keywords/dashboard. */
+      onsiteMetricsConfigured: appEnv.morningscoreApiKey.length > 0,
       qubicRpcConfigured: hasAllEnvKeys(["QUBIC_RPC_BASE_URL"]),
       rssConfigured: appEnv.rssFeedUrls.length > 0,
       anthropicConfigured: appEnv.anthropicApiKey.length > 0,
@@ -101,9 +96,8 @@ export function getEnvironmentOverview() {
 const requiredEnvKeys = ["JOB_SECRET"] as const;
 
 const optionalEnvKeys = [
-  "GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL",
-  "GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY",
-  "GOOGLE_API_KEY",
+  "MORNINGSCORE_API_KEY",
+  "MORNINGSCORE_DOMAIN_ID",
   "RSS_FEED_URLS",
   "ANTHROPIC_API_KEY",
   "DATABASE_URL",

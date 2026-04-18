@@ -2,12 +2,11 @@ import { after } from "next/server";
 import { NextRequest, NextResponse } from "next/server";
 
 import { appendAuditEventFromRequest } from "@/features/seo/server/audit-log";
-import { appEnv } from "@/features/seo/server/env";
 import { runFullCycleJob, runSeoJob, type JobName } from "@/features/seo/server/jobs";
 import { listJobSchedules, runDueScheduledJobs, updateJobSchedule } from "@/features/seo/server/scheduler";
 import { getConnectorRuns } from "@/features/seo/server/storage";
 import { jobPatchSchema, jobPostSchema, parseJsonBody } from "@/lib/api-validation";
-import { isApiAuthorized, requireApiAuthorization } from "@/lib/api-auth";
+import { requireApiAuthorization } from "@/lib/api-auth";
 import { catchToJsonError, jsonError } from "@/lib/api-error";
 import { rememberIdempotentResponse, takeIdempotentResponse } from "@/lib/idempotency";
 import { enqueueSeoJob, isSeoJobQueueAvailable, SEO_JOBS_QUEUE_NAME } from "@/lib/queue/seo-jobs-queue";
@@ -41,16 +40,18 @@ export async function GET(request: NextRequest) {
     return limited;
   }
 
-  const recentRuns =
-    !appEnv.jobSecret || isApiAuthorized(request) ? await getConnectorRuns() : [];
-  const schedules =
-    !appEnv.jobSecret || isApiAuthorized(request) ? await listJobSchedules() : [];
+  const authError = requireApiAuthorization(request);
+  if (authError) {
+    return authError;
+  }
+
+  const [recentRuns, schedules] = await Promise.all([getConnectorRuns(), listJobSchedules()]);
 
   return NextResponse.json({
     jobs: validJobs,
     recentRuns,
     schedules,
-    recentRunsRedacted: Boolean(appEnv.jobSecret) && !isApiAuthorized(request)
+    recentRunsRedacted: false
   });
 }
 

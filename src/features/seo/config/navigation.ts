@@ -81,6 +81,6 @@ export const pageMeta: Record<string, { title: string; subtitle: string }> = {
   },
   "/connectors": {
     title: "Connectors",
-    subtitle: "Pull Search Console, crawl, PageSpeed, RSS, GitHub, and more into one signal layer."
+    subtitle: "Pull Morningscore (keywords + onsite), crawl, RSS, GitHub, and more into one signal layer."
   }
 };

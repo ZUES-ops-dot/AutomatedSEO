@@ -11,7 +11,7 @@ This guide walks you through obtaining every API key and environment variable ne
 1. [Quick Start (Railway Deployment)](#quick-start-railway-deployment)
 2. [Required for Production](#required-for-production)
 3. [AI / LLM (Anthropic)](#ai--llm-anthropic)
-4. [Google APIs](#google-apis)
+4. [Google PageSpeed & Morningscore](#google-pagespeed--morningscore)
 5. [Database & Caching](#database--caching)
 6. [Monitoring & Error Tracking](#monitoring--error-tracking)
 7. [Content Sources](#content-sources)
@@ -33,7 +33,7 @@ The app works with fallbacks for all other features.
 
 **Railway will auto-generate:** `DATABASE_URL` (via Postgres plugin)
 
-**Optional but recommended:** `GOOGLE_API_KEY`, `GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL`, `GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY`
+**Optional but recommended:** `MORNINGSCORE_API_KEY`
 
 ---
 
@@ -80,55 +80,24 @@ Available options:
 
 ---
 
-## Google APIs
+## Google PageSpeed & Morningscore
 
-### PageSpeed Insights API
+### Morningscore API (search performance, onsite, issues, backlinks)
 
-**`GOOGLE_API_KEY`**
+Replaces Google Search Console and GA4 for this app: keyword rankings, estimated traffic, landing pages, Morningscore value, Linkscore, and onsite Healthscore. See [api.morningscore.io](https://api.morningscore.io) and [Morningscore SEO API](https://morningscore.io/seo-api/).
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project (or select existing)
-3. Navigate to "APIs & Services" → "Library"
-4. Search "PageSpeed Insights API" and click "Enable"
-5. Go to "Credentials" → "Create Credentials" → "API Key"
-6. Copy the key and add to `.env.local`: `GOOGLE_API_KEY=AIza...`
+**`MORNINGSCORE_API_KEY`**
 
-**Quota:** 100 queries per 100 seconds (sufficient for most sites).
+1. Open [Morningscore](https://v3.morningscore.io) and add your website as a domain if needed.
+2. Go to **Settings → API** and create an API key (Bearer token).
+3. Set `MORNINGSCORE_API_KEY=<your-token>` in Railway or `.env.local`.
 
----
+**`MORNINGSCORE_DOMAIN_ID`** (optional)
 
-### Search Console API (for search performance data)
+- The `global_domain_identifier` returned by `GET https://api.morningscore.io/v1/domains`.
+- If omitted, the app matches `PRIMARY_SITE_URL`’s hostname to your Morningscore domains list.
 
-Requires **Service Account** credentials (not OAuth).
-
-**`GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL`**
-
-**`GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY`**
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Navigate to "IAM & Admin" → "Service Accounts"
-3. Click "Create Service Account"
-4. Name: `search-console-reader`
-5. Grant role: "Search Console Viewer" (or create custom)
-6. Click into the service account → "Keys" tab → "Add Key" → "Create new key"
-7. Select JSON format, download the file
-8. Open the JSON file and extract:
-   - `client_email` → `GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL`
-   - `private_key` → `GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY` (copy entire value including `-----BEGIN PRIVATE KEY-----`)
-
-9. Add your site in Search Console:
-   - Go to [search.google.com/search-console](https://search.google.com/search-console)
-   - Add property → Domain → `qubic.org`
-   - Verify ownership via DNS or other method
-
-10. Share the property with the service account:
-    - In Search Console, go to Settings → Users and Permissions
-    - Add the service account email (`search-console-reader@your-project.iam.gserviceaccount.com`)
-    - Grant "Full" or "Restricted" permission
-
-**Note:** The private key in `.env.local` must have literal newlines. Either:
-- Use `.env.local` with actual line breaks (not recommended)
-- Or escape as `\n` in the value (the app handles conversion)
+**Rate limits:** about 2 requests per second (see Morningscore docs). Sync batches keyword pages with a short delay between calls.
 
 ---
 
@@ -307,7 +276,7 @@ These have sensible defaults but can be customized:
 | `DOCS_SITE_URL` | `https://docs.qubic.org` | Documentation site |
 | `BLOG_SITE_URL` | `https://blogs.qubic.org` | Blog site |
 | `QUBIC_RPC_BASE_URL` | `https://rpc.qubic.org` | Qubic blockchain RPC |
-| `SEARCH_CONSOLE_PROPERTY` | `sc-domain:qubic.org` | Search Console property |
+| `MORNINGSCORE_DOMAIN_ID` | _(empty)_ | Optional; `global_domain_identifier` from Morningscore `/v1/domains` |
 
 ---
 
@@ -324,7 +293,6 @@ PRIMARY_SITE_URL=https://qubic.org
 DOCS_SITE_URL=https://docs.qubic.org
 BLOG_SITE_URL=https://blogs.qubic.org
 QUBIC_RPC_BASE_URL=https://rpc.qubic.org
-SEARCH_CONSOLE_PROPERTY=sc-domain:qubic.org
 GDELT_QUERY="Qubic" OR qubic.org
 
 # =============================================================================
@@ -334,11 +302,10 @@ ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
 ANTHROPIC_MODEL=claude-3-5-sonnet-latest
 
 # =============================================================================
-# Google APIs (Optional but recommended)
+# Morningscore (optional — keywords, onsite, dashboard)
 # =============================================================================
-GOOGLE_API_KEY=AIza-your-key
-GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
-GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...\n-----END PRIVATE KEY-----"
+MORNINGSCORE_API_KEY=your-morningscore-bearer-token
+MORNINGSCORE_DOMAIN_ID=
 
 # =============================================================================
 # Content Sources (Optional)
@@ -424,9 +391,10 @@ npm run dev
 - Check `ANTHROPIC_API_KEY` is set and not empty
 - Verify key starts with `sk-ant-`
 
-### "Search Console not configured"
-- Both `GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL` and `GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY` must be set
-- Verify the service account email has been added to your Search Console property
+### "Morningscore sync fails" / empty dashboard KPIs
+- Set `MORNINGSCORE_API_KEY` from Morningscore → Settings → API
+- Ensure your site exists in Morningscore, or set `MORNINGSCORE_DOMAIN_ID` to the value from `GET /v1/domains`
+- Match `PRIMARY_SITE_URL` hostname to the domain in Morningscore when not using an explicit domain id
 
 ### "Database connection failed"
 - Check `DATABASE_URL` format

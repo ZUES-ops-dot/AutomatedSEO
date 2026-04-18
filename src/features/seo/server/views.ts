@@ -1,6 +1,8 @@
 import { contentIdeas as seededIdeas, trendSeries as seededTrendSeries } from "@/features/seo/data/demo-data";
 import { getConnectorCatalog, getConnectorSummary } from "@/features/seo/server/connectors";
 import { getCachedIdeasIfValid, setIdeasCache } from "@/features/seo/server/idea-cache";
+import { getMorningscoreAttentionItems } from "@/features/seo/server/morningscore-attention";
+import { getMorningscoreDashboardMetrics } from "@/features/seo/server/morningscore-dashboard";
 import { listJobSchedules } from "@/features/seo/server/scheduler";
 import { VIEW_LIMITS } from "@/features/seo/server/seo-constants";
 import {
@@ -121,7 +123,8 @@ function toJobRuns(runs: Awaited<ReturnType<typeof getConnectorRuns>>): JobRun[]
 
 function buildPageAttention(
   pages: Awaited<ReturnType<typeof getSitePages>>,
-  pageSpeedSnapshots: Awaited<ReturnType<typeof getPageSpeedSnapshots>>
+  pageSpeedSnapshots: Awaited<ReturnType<typeof getPageSpeedSnapshots>>,
+  morningscoreAttention: PageAttentionItem[]
 ): PageAttentionItem[] {
   const pageIssues = pages
     .filter((page) => page.issues.length > 0)
@@ -135,19 +138,21 @@ function buildPageAttention(
       recommendation: `Review ${page.url} for crawl/indexation and content-depth improvements.`
     })) as PageAttentionItem[];
 
+  const msIssues = morningscoreAttention.slice(0, VIEW_LIMITS.pageAttentionMorningscore);
+
   const performanceIssues = pageSpeedSnapshots
     .filter((snapshot) => snapshot.performanceScore < 65)
     .slice(0, VIEW_LIMITS.pageAttentionPageSpeed)
     .map((snapshot) => ({
-      id: `attention-pagespeed-${snapshot.id}`,
+      id: `attention-onsite-${snapshot.id}`,
       url: snapshot.url,
-      issue: `${snapshot.strategy} performance score is ${snapshot.performanceScore}.`,
+      issue: `Morningscore onsite score ${snapshot.performanceScore} (${snapshot.strategy}).`,
       priority: snapshot.performanceScore < 40 ? "high" : "medium",
-      affectedMetric: "Core Web Vitals",
-      recommendation: "Review render-blocking resources, image weight, and layout stability on this page."
+      affectedMetric: "Onsite crawl / performance signals",
+      recommendation: "Resolve open tasks in Morningscore for this URL (includes page speed validators)."
     })) as PageAttentionItem[];
 
-  return [...pageIssues, ...performanceIssues].slice(0, VIEW_LIMITS.pageAttentionTotal);
+  return [...pageIssues, ...msIssues, ...performanceIssues].slice(0, VIEW_LIMITS.pageAttentionTotal);
 }
 
 export async function getSuggestionsData() {
@@ -180,7 +185,9 @@ export async function getDashboardData() {
     pages,
     pageSpeedSnapshots,
     outcomes,
-    schedules
+    schedules,
+    morningscoreMetrics,
+    morningscoreAttention
   ] = await Promise.all([
     getReadableOpportunities(),
     getContentStudioData(),
@@ -189,7 +196,9 @@ export async function getDashboardData() {
     getSitePages(),
     getPageSpeedSnapshots(),
     getOpportunityOutcomes(),
-    listJobSchedules()
+    listJobSchedules(),
+    getMorningscoreDashboardMetrics(),
+    getMorningscoreAttentionItems()
   ]);
 
   const ideas = deriveIdeasFromOpportunities(opportunities);
@@ -207,6 +216,7 @@ export async function getDashboardData() {
       ? Math.round(runtimeConnectors.reduce((sum, connector) => sum + connector.healthScore, 0) / runtimeConnectors.length)
       : 0;
   const metrics: DashboardMetric[] = [
+    ...morningscoreMetrics,
     {
       id: "metric-opportunities",
       label: "Actionable opportunities",
@@ -248,7 +258,7 @@ export async function getDashboardData() {
     connectors: runtimeConnectors,
     jobs: toJobRuns(connectorRuns),
     schedules,
-    pagesNeedingAttention: buildPageAttention(pages, pageSpeedSnapshots),
+    pagesNeedingAttention: buildPageAttention(pages, pageSpeedSnapshots, morningscoreAttention),
     ideas: ideas.slice(0, VIEW_LIMITS.dashboardIdeasPreview),
     briefs: studio.briefs.slice(0, VIEW_LIMITS.studioBriefsPreview),
     drafts: studio.drafts.slice(0, VIEW_LIMITS.studioDraftsPreview)

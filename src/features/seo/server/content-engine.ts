@@ -49,6 +49,7 @@ interface DraftModelOutput {
 
 const connectorBySourceType: Record<string, string[]> = {
   search_console: ["search-console"],
+  morningscore: ["search-console"],
   docs_crawl: ["docs-crawl"],
   internal_link_graph: ["site-crawl"],
   community_signal: ["rss-watch", "gdelt"],

@@ -16,7 +16,7 @@ describe("startup config report", () => {
     vi.resetModules();
     vi.stubEnv("RAILWAY_ENVIRONMENT_NAME", "prod");
     vi.stubEnv("JOB_SECRET", "secret-value");
-    vi.stubEnv("GOOGLE_API_KEY", "k");
+    vi.stubEnv("MORNINGSCORE_API_KEY", "k");
     const env = await import("@/features/seo/server/env");
     const report = env.getStartupConfigReport();
     expect(report.mode).toBe("operational");

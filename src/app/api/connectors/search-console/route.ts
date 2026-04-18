@@ -15,10 +15,15 @@ export async function GET(request: NextRequest) {
     return limited;
   }
 
+  const authError = requireApiAuthorization(request);
+  if (authError) {
+    return authError;
+  }
+
   try {
     return NextResponse.json(await getSearchSignalStatus());
   } catch (error) {
-    return catchToJsonError(error, "Failed to load Search Console status.");
+    return catchToJsonError(error, "Failed to load search signal status.");
   }
 }
 

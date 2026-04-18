@@ -13,3 +13,22 @@
 {"ts":"2026-04-14T23:49:28.893Z","tenantId":"default","action":"api.blogLinks.docx","detail":{"title":"Wallet Guide"}}
 {"ts":"2026-04-14T23:49:28.892Z","tenantId":"default","action":"api.content.publish","detail":{"draftId":"draft-1","target":"local_markdown"}}
 {"ts":"2026-04-14T23:49:29.386Z","tenantId":"default","action":"api.sourcePack.build","detail":{"persist":true,"topic":"docs"}}
+{"ts":"2026-04-18T19:43:48.610Z","tenantId":"default","action":"api.content.publish","detail":{"draftId":"draft-1","target":"local_markdown"}}
+{"ts":"2026-04-18T19:43:48.612Z","tenantId":"default","action":"api.blogLinks.docx","detail":{"title":"Wallet Guide"}}
+{"ts":"2026-04-18T19:43:49.870Z","tenantId":"default","action":"api.sourcePack.build","detail":{"persist":true,"topic":"docs"}}
+{"ts":"2026-04-18T19:45:33.265Z","tenantId":"default","action":"api.content.publish","detail":{"draftId":"draft-1","target":"local_markdown"}}
+{"ts":"2026-04-18T19:45:33.296Z","tenantId":"default","action":"api.sourcePack.build","detail":{"persist":true,"topic":"docs"}}
+{"ts":"2026-04-18T19:45:35.633Z","tenantId":"default","action":"api.blogLinks.docx","detail":{"title":"Wallet Guide"}}
+{"ts":"2026-04-18T19:46:23.411Z","tenantId":"default","action":"api.blogLinks.docx","detail":{"title":"Wallet Guide"}}
+{"ts":"2026-04-18T19:46:23.410Z","tenantId":"default","action":"api.content.publish","detail":{"draftId":"draft-1","target":"local_markdown"}}
+{"ts":"2026-04-18T19:46:23.858Z","tenantId":"default","action":"api.sourcePack.build","detail":{"persist":true,"topic":"docs"}}
+{"ts":"2026-04-18T19:54:39.353Z","tenantId":"default","action":"api.content.publish","detail":{"draftId":"draft-1","target":"local_markdown"}}
+{"ts":"2026-04-18T19:54:39.355Z","tenantId":"default","action":"api.blogLinks.docx","detail":{"title":"Wallet Guide"}}
+{"ts":"2026-04-18T19:54:39.763Z","tenantId":"default","action":"api.suggestions.patch","detail":{"id":"opp-404","status":"approved"}}
+{"ts":"2026-04-18T19:54:39.776Z","tenantId":"default","action":"api.sourcePack.build","detail":{"persist":true,"topic":"docs"}}
+{"ts":"2026-04-18T19:55:40.745Z","tenantId":"default","action":"api.blogLinks.docx","detail":{"title":"Wallet Guide"}}
+{"ts":"2026-04-18T19:55:40.745Z","tenantId":"default","action":"api.content.publish","detail":{"draftId":"draft-1","target":"local_markdown"}}
+{"ts":"2026-04-18T19:55:40.773Z","tenantId":"default","action":"api.sourcePack.build","detail":{"persist":true,"topic":"docs"}}
+{"ts":"2026-04-18T20:07:07.940Z","tenantId":"default","action":"api.content.publish","detail":{"draftId":"draft-1","target":"local_markdown"}}
+{"ts":"2026-04-18T20:07:07.932Z","tenantId":"default","action":"api.blogLinks.docx","detail":{"title":"Wallet Guide"}}
+{"ts":"2026-04-18T20:07:08.058Z","tenantId":"default","action":"api.sourcePack.build","detail":{"persist":true,"topic":"docs"}}

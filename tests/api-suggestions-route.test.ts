@@ -37,7 +37,7 @@ describe("api/suggestions route", () => {
       generateOpportunityFeed: vi.fn()
     }));
     vi.doMock("@/features/seo/server/storage", () => ({
-      updateStoredOpportunityStatus: vi.fn().mockResolvedValue(null)
+      updateStoredOpportunityStatus: vi.fn().mockRejectedValue(new Error("Opportunity opp-404 not found"))
     }));
     vi.doMock("@/features/seo/server/views", () => ({
       getSuggestionsData: vi.fn().mockResolvedValue({})

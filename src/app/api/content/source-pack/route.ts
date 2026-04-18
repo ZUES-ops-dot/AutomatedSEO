@@ -32,11 +32,9 @@ export async function GET(request: NextRequest) {
     return limited;
   }
 
-  if (getPersistFlag(request)) {
-    const authError = requireApiAuthorization(request);
-    if (authError) {
-      return authError;
-    }
+  const authError = requireApiAuthorization(request);
+  if (authError) {
+    return authError;
   }
 
   try {

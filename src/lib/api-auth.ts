@@ -12,11 +12,12 @@ function readRequestOrigin(request: NextRequest) {
 
   const host = request.headers.get("host")?.trim();
   if (host) {
-    const protocol = forwardedProto ?? request.nextUrl.protocol.replace(/:$/, "");
+    const protocol =
+      forwardedProto ?? request.nextUrl?.protocol?.replace(/:$/, "") ?? "http";
     return `${protocol}://${host}`;
   }
 
-  return request.nextUrl.origin;
+  return request.nextUrl?.origin ?? "http://localhost";
 }
 
 function matchesRequestOrigin(value: string, requestOrigin: string) {

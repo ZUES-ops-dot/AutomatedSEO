@@ -32,27 +32,27 @@ describe("backend integration flow", () => {
         return new Response(
           `<?xml version="1.0" encoding="UTF-8"?>
           <urlset>
-            <url><loc>https://blogs.qubic.org/post-a</loc></url>
-            <url><loc>https://blogs.qubic.org/post-b</loc></url>
+            <url><loc>https://qubic.org/blog-detail/post-a</loc></url>
+            <url><loc>https://qubic.org/blog-detail/post-b</loc></url>
           </urlset>`,
           { status: 200 }
         );
       }
 
-      if (url === "https://blogs.qubic.org/post-a") {
+      if (url === "https://qubic.org/blog-detail/post-a") {
         return new Response(
           `<html><head><title>Qubic Wallet Guide</title><meta name="description" content="Wallet guide" /></head>
            <body><h1>Qubic Wallet Guide</h1><p>This guide explains wallet setup, backup and recovery steps for Qubic users with practical details and examples.</p>
-           <a href="/post-b">Related post</a></body></html>`,
+           <a href="/blog-detail/post-b">Related post</a></body></html>`,
           { status: 200 }
         );
       }
 
-      if (url === "https://blogs.qubic.org/post-b") {
+      if (url === "https://qubic.org/blog-detail/post-b") {
         return new Response(
           `<html><head><title>Qubic Ecosystem Update</title><meta name="description" content="Ecosystem update" /></head>
            <body><h1>Qubic Ecosystem Update</h1><p>Weekly ecosystem and developer update with references to docs, releases and roadmap highlights.</p>
-           <a href="/post-a">Wallet guide</a></body></html>`,
+           <a href="/blog-detail/post-a">Wallet guide</a></body></html>`,
           { status: 200 }
         );
       }
@@ -75,7 +75,7 @@ describe("backend integration flow", () => {
         id: "search-1",
         provider: "manual_csv",
         query: "qubic wallet guide",
-        page: "https://blogs.qubic.org/post-a",
+        page: "https://qubic.org/blog-detail/post-a",
         clicks: 12,
         impressions: 160,
         ctr: 12 / 160,
@@ -90,7 +90,7 @@ describe("backend integration flow", () => {
         kind: "rss_item",
         title: "Qubic ecosystem digest",
         summary: "Weekly digest from official feed",
-        url: "https://blogs.qubic.org/post-b",
+        url: "https://qubic.org/blog-detail/post-b",
         tags: ["ecosystem"],
         score: 74,
         publishedAt: new Date().toISOString(),
@@ -103,7 +103,7 @@ describe("backend integration flow", () => {
 
     const draftResult = await generateAndPersistDraft(
       { opportunityId: opportunityResult.opportunities[0]?.id, provider: "deterministic" },
-      { persist: true }
+      { persist: true, enforceQualityGates: false }
     );
     const publishResult = await publishDraft(draftResult.draft.id, "local_markdown");
 

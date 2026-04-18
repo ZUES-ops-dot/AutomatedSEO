@@ -22,7 +22,12 @@ async function main() {
     process.exit(1);
   }
 
-  await redis.connect().catch(() => undefined);
+  try {
+    await redis.connect();
+  } catch (error) {
+    logSeoEvent("error", "Redis connect failed; worker cannot start.", { error: String(error) });
+    process.exit(1);
+  }
 
   const worker = new Worker(
     SEO_JOBS_QUEUE_NAME,

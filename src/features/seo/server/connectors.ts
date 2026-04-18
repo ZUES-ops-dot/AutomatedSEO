@@ -25,31 +25,22 @@ export function getRuntimeEnvSnapshot() {
             : "Not loaded. Set ANTHROPIC_API_KEY in Railway and redeploy."
       },
       {
-        label: "Search Console service account email",
-        env: "GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL",
-        configured: appEnv.searchConsoleClientEmail.length > 0,
+        label: "Morningscore API key",
+        env: "MORNINGSCORE_API_KEY",
+        configured: appEnv.morningscoreApiKey.length > 0,
         detail:
-          appEnv.searchConsoleClientEmail.length > 0
-            ? `Loaded (${appEnv.searchConsoleClientEmail})`
-            : "Not loaded. Set GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL."
+          appEnv.morningscoreApiKey.length > 0
+            ? `Loaded (\u2026${maskTail(appEnv.morningscoreApiKey)})`
+            : "Not loaded. Create a key in Morningscore → Settings → API."
       },
       {
-        label: "Search Console service account private key",
-        env: "GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY",
-        configured: appEnv.searchConsolePrivateKey.length > 0,
+        label: "Morningscore domain id (optional)",
+        env: "MORNINGSCORE_DOMAIN_ID",
+        configured: appEnv.morningscoreDomainId.length > 0,
         detail:
-          appEnv.searchConsolePrivateKey.length > 0
-            ? `Loaded (${appEnv.searchConsolePrivateKey.length} chars, includes BEGIN marker: ${appEnv.searchConsolePrivateKey.includes("BEGIN")})`
-            : "Not loaded. Paste the private key (including BEGIN/END markers) into GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY."
-      },
-      {
-        label: "Google API key (PageSpeed / CrUX)",
-        env: "GOOGLE_API_KEY",
-        configured: appEnv.googleApiKey.length > 0,
-        detail:
-          appEnv.googleApiKey.length > 0
-            ? `Loaded (\u2026${maskTail(appEnv.googleApiKey)})`
-            : "Not loaded. Set GOOGLE_API_KEY."
+          appEnv.morningscoreDomainId.length > 0
+            ? `Using ${appEnv.morningscoreDomainId}`
+            : "Optional. If unset, the app matches PRIMARY_SITE_URL to GET /v1/domains."
       },
       {
         label: "Job secret",
@@ -104,7 +95,7 @@ function buildSetupHint(connector: ConnectorRuntime) {
   }
 
   if (connector.id === "search-console") {
-    return "Add Google service-account access for live Search Console data, or use the manual/demo search-signal fallback via the Search Console sync endpoint.";
+    return "Add MORNINGSCORE_API_KEY (and optionally MORNINGSCORE_DOMAIN_ID), or use manual CSV / demo rows via the search signals sync endpoint.";
   }
 
   if (connector.missingEnvKeys.length === connector.envKeys.length) {

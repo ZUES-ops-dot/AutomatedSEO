@@ -16,6 +16,11 @@ export async function GET(request: NextRequest) {
     return limited;
   }
 
+  const authError = requireApiAuthorization(request);
+  if (authError) {
+    return authError;
+  }
+
   try {
     const latest = await getLatestInternalLinkAudit();
     return NextResponse.json({

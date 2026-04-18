@@ -1,11 +1,23 @@
 import { opportunities as seededOpportunities } from "@/features/seo/data/demo-data";
 import { enrichOpportunity } from "@/features/seo/lib/scoring";
+import { getMorningscoreLinkProfileContext } from "@/features/seo/server/morningscore-link-profile";
 import { getSearchPerformanceRows, getSitePages, getSourceEvents, getStoredOpportunities, saveConnectorRun, saveOpportunities } from "@/features/seo/server/storage";
 import type { ConnectorRun, Opportunity, OpportunityCandidate, SearchPerformanceRow, SitePage, SourceEvent } from "@/features/seo/types";
 
 interface OpportunityEngineInput {
   persist?: boolean;
   recordRun?: boolean;
+}
+
+function applyLinkProfileBoost(candidate: OpportunityCandidate, boost: number): OpportunityCandidate {
+  if (boost <= 0) {
+    return candidate;
+  }
+  return {
+    ...candidate,
+    demandSignal: Math.min(100, candidate.demandSignal + boost),
+    internalLinkSupport: Math.min(100, candidate.internalLinkSupport + Math.round(boost / 2))
+  };
 }
 
 function slugify(value: string) {
@@ -126,12 +138,12 @@ export function buildRefreshCandidate(row: SearchPerformanceRow, page: SitePage 
     pageType: inferPageType(row.page),
     reason: `Search performance shows ${row.impressions} impressions and ${(row.ctr * 100).toFixed(1)}% CTR for ${row.query}, suggesting an existing-page refresh opportunity.`,
     evidence: [
-      `Search Console row: ${row.clicks} clicks, ${row.impressions} impressions, ${(row.ctr * 100).toFixed(1)}% CTR, average position ${row.position.toFixed(1)}.`,
+      `Search performance: ${row.clicks} est. visits, ${row.impressions} volume, ${(row.ctr * 100).toFixed(1)}% CTR, position ${row.position.toFixed(1)}.`,
       ...(page ? page.issues.map((issue) => `Crawl signal: ${issue}`) : ["No crawl snapshot exists for this URL yet."]),
       `Primary URL observed: ${row.page}`
     ],
     sourceTypes: [
-      "search_console",
+      "morningscore",
       ...(page
         ? [
             page.site === "docs" ? "docs_crawl" : page.site === "blog" ? "blog_crawl" : "site_crawl"
@@ -195,7 +207,7 @@ export function buildSupportCandidate(rows: SearchPerformanceRow[], existingStat
         ? "Traffic is landing on root-like pages, suggesting the intent lacks a dedicated support asset."
         : "Related demand is distributed across multiple URLs without a single canonical support page."
     ],
-    sourceTypes: ["search_console", "search_gap_review"],
+    sourceTypes: ["morningscore", "search_gap_review"],
     businessRelevance: clamp(82 + rootLikePages.length * 4),
     demandSignal: clamp(Math.log10(Math.max(totalImpressions, 1)) * 40 + 15),
     ctrGap: clamp((0.1 - totalClicks / Math.max(totalImpressions, 1)) * 500 + 28),
@@ -374,9 +386,12 @@ export async function generateOpportunityFeed(input: OpportunityEngineInput = {}
   const startedAt = new Date().toISOString();
   const stored = await getStoredOpportunities();
   const existingById = new Map(stored.map((item) => [item.id, item]));
-  const searchRows = await getSearchPerformanceRows();
-  const pages = await getSitePages();
-  const events = await getSourceEvents();
+  const [searchRows, pages, events, linkCtx] = await Promise.all([
+    getSearchPerformanceRows(),
+    getSitePages(),
+    getSourceEvents(),
+    getMorningscoreLinkProfileContext()
+  ]);
 
   const refreshCandidates = searchRows.slice(0, 12).map((row) => buildRefreshCandidate(row, findClosestPage(row, pages), existingById.get(`opp-refresh-${slugify(row.query)}-${slugify(row.page)}`)?.status));
   const groupedSupportRows = new Map<string, SearchPerformanceRow[]>();
@@ -401,7 +416,9 @@ export async function generateOpportunityFeed(input: OpportunityEngineInput = {}
     .map((event) => buildFreshnessCandidate(event, existingById.get(`opp-blog-${event.connectorId}-${slugify(event.title)}`)?.status));
   const mergeCandidates = buildMergeCandidates(pages.slice(0, 20), existingById);
 
-  const generated = dedupeCandidates([...refreshCandidates, ...supportCandidates, ...freshnessCandidates, ...mergeCandidates]).map((candidate) => enrichOpportunity(candidate));
+  const generated = dedupeCandidates([...refreshCandidates, ...supportCandidates, ...freshnessCandidates, ...mergeCandidates]).map((candidate) =>
+    enrichOpportunity(applyLinkProfileBoost(candidate, linkCtx.boostPoints))
+  );
   const opportunities = generated.length > 0 ? generated.sort((left, right) => right.score - left.score).slice(0, 30) : stored.length > 0 ? stored : seededOpportunities;
 
   if (input.persist ?? true) {

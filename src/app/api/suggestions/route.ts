@@ -6,7 +6,7 @@ import { updateStoredOpportunityStatus } from "@/features/seo/server/storage";
 import { getSuggestionsData } from "@/features/seo/server/views";
 import { parseJsonBody, suggestionPatchSchema } from "@/lib/api-validation";
 import { requireApiAuthorization } from "@/lib/api-auth";
-import { catchToJsonError, jsonError } from "@/lib/api-error";
+import { catchToJsonError } from "@/lib/api-error";
 import { rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -15,6 +15,11 @@ export async function GET(request: NextRequest) {
   const limited = await rateLimitResponse(request, { namespace: "api-suggestions-get", max: 90, windowMs: 60_000 });
   if (limited) {
     return limited;
+  }
+
+  const authError = requireApiAuthorization(request);
+  if (authError) {
+    return authError;
   }
 
   try {
@@ -64,9 +69,6 @@ export async function PATCH(request: NextRequest) {
     const body = parsed.data;
 
     const updated = await updateStoredOpportunityStatus(body.id, body.status);
-    if (!updated) {
-      return jsonError(`Opportunity ${body.id} was not found.`, 404);
-    }
 
     await appendAuditEvent({
       action: "api.suggestions.patch",

@@ -17,7 +17,7 @@ function makePostRequest(body: unknown) {
 }
 
 describe("api/content/source-pack route", () => {
-  it("requires auth for GET when persist=true", async () => {
+  it("requires auth for GET", async () => {
     vi.resetModules();
     vi.doMock("@/lib/api-auth", () => ({
       requireApiAuthorization: vi

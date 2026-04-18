@@ -42,7 +42,7 @@ export async function pingRedis(): Promise<{ ok: boolean; backend: "redis" | "un
     return { ok: true, backend: "unconfigured" };
   }
   try {
-    await r.connect().catch(() => undefined);
+    await r.connect();
     const pong = await r.ping();
     return { ok: pong === "PONG", backend: "redis" };
   } catch (error) {

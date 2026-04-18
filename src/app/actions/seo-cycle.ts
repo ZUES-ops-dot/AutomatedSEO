@@ -112,7 +112,7 @@ export async function runSeoJobAction(job: JobName): Promise<RunJobResult> {
       crawl: "Crawl completed — site pages updated.",
       "internal-links": "Internal-link audit refreshed.",
       "search-signals": "Search signal rows refreshed.",
-      pagespeed: "PageSpeed snapshots refreshed.",
+      pagespeed: "Morningscore onsite snapshots refreshed.",
       rss: "RSS feeds synced.",
       gdelt: "GDELT events synced.",
       opportunities: "Opportunities regenerated.",

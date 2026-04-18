@@ -176,7 +176,10 @@ function normalizeJobSchedule(
   }
 
   const status =
-    schedule.lastStatus === "success" || schedule.lastStatus === "error" || schedule.lastStatus === "fallback"
+    schedule.lastStatus === "success" ||
+    schedule.lastStatus === "error" ||
+    schedule.lastStatus === "fallback" ||
+    schedule.lastStatus === "started"
       ? schedule.lastStatus
       : null;
 
@@ -431,7 +434,6 @@ async function mutateCollection<K extends keyof SeoPersistenceState, T>(
         collection: String(key),
         error: String(err)
       });
-      throw err;
     })
     .then(async () => {
       const current = await doReadCollection(key);
@@ -442,10 +444,13 @@ async function mutateCollection<K extends keyof SeoPersistenceState, T>(
 
   collectionWriteQueues.set(
     key,
-    operation.catch((err: unknown) => {
-      logSeoEvent("error", "SEO collection write failed.", { collection: String(key), error: String(err) });
-      throw err;
-    })
+    operation.then(
+      () => undefined,
+      (err: unknown) => {
+        logSeoEvent("error", "SEO collection write failed.", { collection: String(key), error: String(err) });
+        return undefined;
+      }
+    )
   );
 
   return operation;

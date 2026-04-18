@@ -18,9 +18,10 @@ export const VIEW_LIMITS = {
   studioDraftsPreview: 2,
   ideaEvidenceSnippets: 4,
   jobRunsPreview: 8,
-  pageAttentionTechnical: 4,
+  pageAttentionTechnical: 3,
+  pageAttentionMorningscore: 4,
   pageAttentionPageSpeed: 2,
-  pageAttentionTotal: 6
+  pageAttentionTotal: 10
 } as const;
 
 export const CRAWL_LIMITS = {
