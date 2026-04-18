@@ -78,22 +78,32 @@ export function DashboardView({ data }: DashboardViewProps) {
   ].slice(0, 4);
   const cycleSteps = jobs.slice(0, 5);
   const activeSchedules = schedules.filter((schedule) => schedule.enabled).slice(0, 3);
-  const activityItems = [
+  const activityItems: Array<{
+    id: string;
+    title: string;
+    detail: string;
+    time: string;
+    tone: "success" | "danger" | "warning" | "muted";
+    href?: string;
+    isExternal?: boolean;
+  }> = [
     ...cycleSteps.slice(0, 2).map((job) => ({
       id: `job-${job.id}`,
       title: job.name,
       detail: job.detail,
       time: job.lastRun,
-      tone: job.status === "healthy" ? "success" : job.status === "warning" ? "warning" : "muted"
+      tone: (job.status === "healthy" ? "success" : job.status === "warning" ? "warning" : "muted") as "success" | "warning" | "muted"
     })),
-    ...pagesNeedingAttention.slice(0, 3).map((page) => ({
+    ...pagesNeedingAttention.slice(0, 5).map((page) => ({
       id: `page-${page.id}`,
       title: page.url,
       detail: page.issue,
       time: page.priority,
-      tone: page.priority === "high" ? "danger" : "warning"
+      tone: (page.priority === "high" ? "danger" : "warning") as "danger" | "warning",
+      href: page.url,
+      isExternal: true
     }))
-  ].slice(0, 5);
+  ].slice(0, 7);
 
   async function generateDoNowBrief() {
     if (!doNowAction) {
@@ -327,8 +337,20 @@ export function DashboardView({ data }: DashboardViewProps) {
           </div>
         </Panel>
 
-        <Panel title="Activity">
+        <Panel
+          title="Activity & issues"
+          action={
+            <Link href="/suggestions" className="mono text-[11px] text-cyan-300 transition hover:text-cyan-200">
+              View all →
+            </Link>
+          }
+        >
           <div className="space-y-0">
+            {activityItems.length === 0 ? (
+              <p className="text-[12px] text-white/40">
+                No activity yet. Run the autopilot cycle to populate job runs and page issues.
+              </p>
+            ) : null}
             {activityItems.map((item) => (
               <div key={item.id} className="flex items-start gap-2.5 border-b border-white/[0.04] py-2.5 last:border-b-0 last:pb-0">
                 <div className="surface mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md">
@@ -341,9 +363,21 @@ export function DashboardView({ data }: DashboardViewProps) {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11.5px] leading-5 text-white">
-                    <strong className="font-semibold">{item.title}</strong>
-                  </p>
+                  {item.href && item.isExternal ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block truncate text-[11.5px] font-semibold leading-5 text-cyan-300 hover:underline"
+                      title={item.href}
+                    >
+                      {item.title}
+                    </a>
+                  ) : (
+                    <p className="truncate text-[11.5px] leading-5 text-white">
+                      <strong className="font-semibold">{item.title}</strong>
+                    </p>
+                  )}
                   <p className="text-[11px] leading-5 text-white/42">{item.detail}</p>
                 </div>
                 <div className="mono shrink-0 pt-0.5 text-[10px] text-white/22">{item.time}</div>

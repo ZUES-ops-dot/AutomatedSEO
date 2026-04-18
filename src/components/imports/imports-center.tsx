@@ -104,7 +104,18 @@ export function ImportsCenter() {
 
   return (
     <div className="space-y-6">
-      <Panel title="Supported templates" subtitle="Start from a known schema so validation and downstream jobs stay deterministic.">
+      <Panel
+        title="What you can import here"
+        subtitle="Bulk-load keywords, URLs, or search performance rows to seed opportunities without waiting for Google Search Console. Pick a template below, download the blank CSV, fill it in, then upload it."
+      >
+        <div className="rounded-2xl border border-cyan-400/10 bg-cyan-400/[0.04] p-4">
+          <p className="text-sm text-white/70">
+            <strong className="text-cyan-200">Why this exists:</strong> If you don't have Google Search Console access (or are waiting on verification), you can import keyword and performance data from any source — Bing Webmaster exports, Ahrefs, SEMrush, or manual keyword lists. The app treats imported data the same as live Search Console data.
+          </p>
+        </div>
+      </Panel>
+
+      <Panel title="Available templates" subtitle="Start from a known schema so validation and downstream jobs stay deterministic.">
         <div className="grid gap-4 xl:grid-cols-2">
           {importTemplates.map((template) => (
             <div key={template.id} className="rounded-3xl border border-white/10 bg-black/20 p-4">
