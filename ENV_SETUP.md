@@ -91,6 +91,8 @@ Replaces Google Search Console and GA4 for this app: keyword rankings, estimated
 1. Open [Morningscore](https://v3.morningscore.io) and add your website as a domain if needed.
 2. Go to **Settings → API** and create an API key (Bearer token).
 3. Set `MORNINGSCORE_API_KEY=<your-token>` in Railway or `.env.local`.
+4. **Railway:** Add the variable on the **same service** that runs the Next.js app (`next start`). Variables attached only to Postgres/Redis/Cron services are not visible to the web process—if the UI shows “Not loaded”, fix the service or name, then **redeploy**.
+5. **Aliases:** The app also reads `MORNINGSCORE_TOKEN` or `MS_API_KEY` if `MORNINGSCORE_API_KEY` is empty (useful when fixing naming mistakes).
 
 **`MORNINGSCORE_DOMAIN_ID`** (optional)
 
@@ -274,7 +276,8 @@ These have sensible defaults but can be customized:
 | `NEXT_PUBLIC_APP_NAME` | `Qubic SEO Autopilot` | App name in UI |
 | `PRIMARY_SITE_URL` | `https://qubic.org` | Main site to optimize |
 | `DOCS_SITE_URL` | `https://docs.qubic.org` | Documentation site |
-| `BLOG_SITE_URL` | `https://blogs.qubic.org` | Blog site |
+| `BLOG_SITE_URL` | `https://qubic.org` | Base URL where blog posts are crawled |
+| `BLOG_URL_PATH_PREFIX` | `/blog-detail` | Path prefix for blog URLs on that host |
 | `QUBIC_RPC_BASE_URL` | `https://rpc.qubic.org` | Qubic blockchain RPC |
 | `MORNINGSCORE_DOMAIN_ID` | _(empty)_ | Optional; `global_domain_identifier` from Morningscore `/v1/domains` |
 
@@ -291,7 +294,8 @@ Set these in your Railway project dashboard (Variables section):
 NEXT_PUBLIC_APP_NAME=Qubic SEO Autopilot
 PRIMARY_SITE_URL=https://qubic.org
 DOCS_SITE_URL=https://docs.qubic.org
-BLOG_SITE_URL=https://blogs.qubic.org
+BLOG_SITE_URL=https://qubic.org
+BLOG_URL_PATH_PREFIX=/blog-detail
 QUBIC_RPC_BASE_URL=https://rpc.qubic.org
 GDELT_QUERY="Qubic" OR qubic.org
 

@@ -7,13 +7,18 @@ import {
   sleepMs
 } from "@/features/seo/server/morningscore-api";
 import type { DashboardMetric } from "@/features/seo/types";
+import { logSeoEvent } from "@/lib/seo-log";
 
 /**
  * Live Morningscore KPIs for the dashboard (Morningscore value, keywords, Linkscore, Healthscore).
- * Returns an empty array when the API key is missing or the request fails.
+ * Returns an empty array when the API key is missing or core requests fail.
  */
 export async function getMorningscoreDashboardMetrics(): Promise<DashboardMetric[]> {
   if (!appEnv.morningscoreApiKey) {
+    logSeoEvent("warn", "Morningscore API key not configured; set MORNINGSCORE_API_KEY on the server (Railway Variables for the web service).", {
+      deployment: process.env.RAILWAY_ENVIRONMENT_NAME ? "railway" : "local",
+      primarySiteUrl: appEnv.primarySiteUrl
+    });
     return [];
   }
 
@@ -26,12 +31,10 @@ export async function getMorningscoreDashboardMetrics(): Promise<DashboardMetric
     await sleepMs(MORNINGSCORE_REQUEST_GAP_MS);
 
     const details = await getMorningscoreDomainDetails(appEnv.morningscoreApiKey, domainId);
-    await sleepMs(MORNINGSCORE_REQUEST_GAP_MS);
-    const health = await getMorningscoreOverallHealth(appEnv.morningscoreApiKey, domainId);
 
     const metrics: DashboardMetric[] = [];
 
-    if (details.score != null) {
+    if (details.score != null && Number.isFinite(details.score)) {
       metrics.push({
         id: "metric-ms-morningscore",
         label: "Morningscore",
@@ -44,17 +47,17 @@ export async function getMorningscoreDashboardMetrics(): Promise<DashboardMetric
       });
     }
 
-    if (details.keywords != null) {
+    if (details.keywords != null && Number.isFinite(details.keywords)) {
       metrics.push({
         id: "metric-ms-keywords",
         label: "Keywords ranking",
-        value: String(details.keywords),
+        value: String(Math.round(details.keywords)),
         delta: "Top 20 & broader (per Morningscore)",
         tone: "success"
       });
     }
 
-    if (details.metrics?.link_score != null) {
+    if (details.metrics?.link_score != null && Number.isFinite(details.metrics.link_score)) {
       metrics.push({
         id: "metric-ms-linkscore",
         label: "Linkscore",
@@ -65,16 +68,28 @@ export async function getMorningscoreDashboardMetrics(): Promise<DashboardMetric
       });
     }
 
-    metrics.push({
-      id: "metric-ms-health",
-      label: "Healthscore",
-      value: String(Math.round(health.score)),
-      delta: `${health.pages_count} pages in crawl`,
-      tone: health.score >= 70 ? "success" : "warning"
-    });
+    try {
+      await sleepMs(MORNINGSCORE_REQUEST_GAP_MS);
+      const health = await getMorningscoreOverallHealth(appEnv.morningscoreApiKey, domainId);
+      if (Number.isFinite(health.score)) {
+        const pagesCount = Number.isFinite(health.pages_count) ? Math.max(0, Math.round(health.pages_count)) : 0;
+        metrics.push({
+          id: "metric-ms-health",
+          label: "Healthscore",
+          value: String(Math.round(health.score)),
+          delta: `${pagesCount} pages in crawl`,
+          tone: health.score >= 70 ? "success" : "warning"
+        });
+      }
+    } catch (error) {
+      logSeoEvent("warn", "Morningscore overall health request failed; other KPIs still shown if present.", {
+        error: String(error)
+      });
+    }
 
     return metrics.slice(0, 6);
-  } catch {
+  } catch (error) {
+    logSeoEvent("error", "Morningscore dashboard metrics failed.", { error: String(error) });
     return [];
   }
 }

@@ -7,6 +7,7 @@ import {
   sleepMs
 } from "@/features/seo/server/morningscore-api";
 import type { PageAttentionItem } from "@/features/seo/types";
+import { logSeoEvent } from "@/lib/seo-log";
 
 function slugify(value: string) {
   return value
@@ -102,7 +103,8 @@ export async function getMorningscoreAttentionItems(): Promise<PageAttentionItem
     }
 
     return items.slice(0, 8);
-  } catch {
+  } catch (error) {
+    logSeoEvent("warn", "Morningscore attention items failed.", { error: String(error) });
     return [];
   }
 }

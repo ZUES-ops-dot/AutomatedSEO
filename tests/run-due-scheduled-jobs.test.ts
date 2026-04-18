@@ -80,8 +80,9 @@ describe("runDueScheduledJobs", () => {
     const { runDueScheduledJobs } = await import("@/features/seo/server/scheduler");
     const { getJobSchedules } = await import("@/features/seo/server/storage");
 
-    const referenceFarFuture = "2099-12-31T23:59:59.999Z";
-    const result = await runDueScheduledJobs(referenceFarFuture);
+    /** After `pastDue` but before merged default schedules' computed `nextRunAt` (~now+24h). */
+    const referenceAfterPastDue = "2020-01-02T12:00:00.000Z";
+    const result = await runDueScheduledJobs(referenceAfterPastDue);
 
     expect(runSeoJob).toHaveBeenCalledTimes(3);
     const jobsRun = runSeoJob.mock.calls.map((call) => call[0]).sort();
@@ -91,12 +92,17 @@ describe("runDueScheduledJobs", () => {
     expect(result.ran.every((r) => r.status === "success")).toBe(true);
 
     const stored = await getJobSchedules();
-    expect(stored).toHaveLength(3);
+    expect(stored).toHaveLength(5);
 
+    const ranScheduleIds = new Set(["schedule-crawl", "schedule-opportunities", "schedule-monitoring"]);
     for (const schedule of stored) {
+      expect(schedule.nextRunAt).not.toBeNull();
+      if (!ranScheduleIds.has(schedule.id)) {
+        expect(schedule.lastRunAt).toBeNull();
+        continue;
+      }
       expect(schedule.lastRunAt).not.toBeNull();
       expect(schedule.lastStatus).toBe("success");
-      expect(schedule.nextRunAt).not.toBeNull();
       const lastMs = Date.parse(schedule.lastRunAt!);
       const nextMs = Date.parse(schedule.nextRunAt!);
       expect(nextMs).toBeGreaterThan(lastMs);
@@ -107,7 +113,9 @@ describe("runDueScheduledJobs", () => {
     expect(result.schedules.map((s) => s.id).sort()).toEqual([
       "schedule-crawl",
       "schedule-monitoring",
-      "schedule-opportunities"
+      "schedule-opportunities",
+      "schedule-pagespeed",
+      "schedule-search-signals"
     ]);
     },
     15_000
@@ -169,7 +177,7 @@ describe("runDueScheduledJobs", () => {
     const { runDueScheduledJobs } = await import("@/features/seo/server/scheduler");
     const { getJobSchedules } = await import("@/features/seo/server/storage");
 
-    const result = await runDueScheduledJobs("2099-12-31T23:59:59.999Z");
+    const result = await runDueScheduledJobs("2020-01-02T12:00:00.000Z");
 
     expect(runSeoJob).toHaveBeenCalledTimes(1);
     expect(runSeoJob).toHaveBeenCalledWith("crawl");

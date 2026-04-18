@@ -17,6 +17,17 @@ function readEnvValue(key: string, fallback = "") {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
 }
 
+/** First non-empty among alternative variable names (Railway / legacy naming). */
+function readEnvFirst(...keys: string[]) {
+  for (const key of keys) {
+    const v = readEnvValue(key);
+    if (v.length > 0) {
+      return v;
+    }
+  }
+  return "";
+}
+
 function getDefaultEnvValue(key: string) {
   return key in defaultEnv ? defaultEnv[key as keyof typeof defaultEnv] : "";
 }
@@ -33,7 +44,7 @@ export const appEnv = {
   blogUrlPathPrefix: getResolvedEnvValue("BLOG_URL_PATH_PREFIX"),
   qubicRpcBaseUrl: getResolvedEnvValue("QUBIC_RPC_BASE_URL"),
   /** Bearer token from Morningscore → Settings → API. */
-  morningscoreApiKey: readEnvValue("MORNINGSCORE_API_KEY"),
+  morningscoreApiKey: readEnvFirst("MORNINGSCORE_API_KEY", "MORNINGSCORE_TOKEN", "MS_API_KEY"),
   /** `global_domain_identifier` from GET /v1/domains — optional if hostname matches PRIMARY_SITE_URL. */
   morningscoreDomainId: readEnvValue("MORNINGSCORE_DOMAIN_ID"),
   coingeckoApiKey: readEnvValue("COINGECKO_API_KEY"),

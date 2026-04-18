@@ -12,6 +12,15 @@ describe("startup config report", () => {
     vi.unstubAllEnvs();
   });
 
+  it("reads Morningscore key from MORNINGSCORE_TOKEN when API_KEY is unset", async () => {
+    vi.resetModules();
+    vi.stubEnv("MORNINGSCORE_API_KEY", "");
+    vi.stubEnv("MORNINGSCORE_TOKEN", "token-from-alias");
+    const env = await import("@/features/seo/server/env");
+    expect(env.appEnv.morningscoreApiKey).toBe("token-from-alias");
+    vi.unstubAllEnvs();
+  });
+
   it("reports operational mode when required keys exist", async () => {
     vi.resetModules();
     vi.stubEnv("RAILWAY_ENVIRONMENT_NAME", "prod");

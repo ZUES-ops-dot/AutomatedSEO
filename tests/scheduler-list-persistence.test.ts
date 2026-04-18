@@ -41,12 +41,14 @@ describe("listJobSchedules persistence", () => {
     expect(merged.map((s) => s.id).sort()).toEqual([
       "schedule-crawl",
       "schedule-monitoring",
-      "schedule-opportunities"
+      "schedule-opportunities",
+      "schedule-pagespeed",
+      "schedule-search-signals"
     ]);
     expect(merged.every((s) => s.nextRunAt !== null)).toBe(true);
 
     const stored = await getJobSchedules();
-    expect(stored.length).toBe(3);
+    expect(stored.length).toBe(5);
     expect(stored.map((s) => s.id).sort()).toEqual(merged.map((s) => s.id).sort());
 
     const raw = await readFile(jobSchedulesFilePath(tempDir), "utf8");
@@ -82,10 +84,10 @@ describe("listJobSchedules persistence", () => {
     const { getJobSchedules } = await import("@/features/seo/server/storage");
 
     const merged = await listJobSchedules();
-    expect(merged.length).toBe(3);
+    expect(merged.length).toBe(5);
     const stored = await getJobSchedules();
-    expect(stored.length).toBe(3);
-    expect(new Set(stored.map((s) => s.id)).size).toBe(3);
+    expect(stored.length).toBe(5);
+    expect(new Set(stored.map((s) => s.id)).size).toBe(5);
     },
     15_000
   );
@@ -136,11 +138,11 @@ describe("listJobSchedules persistence", () => {
     const { getJobSchedules } = await import("@/features/seo/server/storage");
 
     const merged = await listJobSchedules();
-    expect(merged.length).toBe(3);
+    expect(merged.length).toBe(5);
     expect(merged.every((s) => s.nextRunAt !== null)).toBe(true);
 
     const stored = await getJobSchedules();
-    expect(stored.length).toBe(3);
+    expect(stored.length).toBe(5);
     expect(stored.every((s) => s.nextRunAt !== null)).toBe(true);
     },
     15_000
@@ -165,11 +167,13 @@ describe("listJobSchedules persistence", () => {
     expect(schedules.map((s) => s.id).sort()).toEqual([
       "schedule-crawl",
       "schedule-monitoring",
-      "schedule-opportunities"
+      "schedule-opportunities",
+      "schedule-pagespeed",
+      "schedule-search-signals"
     ]);
 
     const raw = await readFile(jobSchedulesFilePath(tempDir), "utf8");
-    expect(JSON.parse(raw).length).toBe(3);
+    expect(JSON.parse(raw).length).toBe(5);
     },
     15_000
   );

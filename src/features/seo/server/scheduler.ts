@@ -36,6 +36,28 @@ const defaultSchedules: JobSchedule[] = [
     nextRunAt: null,
     lastStatus: null,
     detail: "Refresh outcome checkpoints."
+  },
+  {
+    id: "schedule-search-signals",
+    job: "search-signals",
+    cadence: "Every 24 hours",
+    intervalMinutes: 24 * 60,
+    enabled: true,
+    lastRunAt: null,
+    nextRunAt: null,
+    lastStatus: null,
+    detail: "Sync keyword rankings from Morningscore (search performance rows)."
+  },
+  {
+    id: "schedule-pagespeed",
+    job: "pagespeed",
+    cadence: "Every 24 hours",
+    intervalMinutes: 24 * 60,
+    enabled: true,
+    lastRunAt: null,
+    nextRunAt: null,
+    lastStatus: null,
+    detail: "Sync onsite crawl snapshots from Morningscore (PageSpeed connector slot)."
   }
 ];
 
