@@ -59,3 +59,6 @@
 {"ts":"2026-04-19T16:51:41.833Z","tenantId":"default","action":"api.blogLinks.docx","detail":{"title":"Wallet Guide"}}
 {"ts":"2026-04-19T16:51:41.824Z","tenantId":"default","action":"api.content.publish","detail":{"draftId":"draft-1","target":"local_markdown"}}
 {"ts":"2026-04-19T16:51:46.928Z","tenantId":"default","action":"api.sourcePack.build","detail":{"persist":true,"topic":"docs"}}
+{"ts":"2026-04-19T17:39:31.363Z","tenantId":"default","action":"api.sourcePack.build","detail":{"persist":true,"topic":"docs"}}
+{"ts":"2026-04-19T17:39:31.838Z","tenantId":"default","action":"api.content.publish","detail":{"draftId":"draft-1","target":"local_markdown"}}
+{"ts":"2026-04-19T17:39:31.845Z","tenantId":"default","action":"api.blogLinks.docx","detail":{"title":"Wallet Guide"}}

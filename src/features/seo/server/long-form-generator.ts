@@ -11,8 +11,14 @@
  * the flow still runs end-to-end for demos/testing.
  */
 
-import { AlignmentType, Document, ExternalHyperlink, HeadingLevel, Paragraph, TextRun, Packer } from "docx";
+import { AlignmentType, Document, HeadingLevel, Paragraph, TextRun, Packer } from "docx";
 
+import {
+  DOCX_DEFAULT_STYLES,
+  buildFurtherReadingParagraph,
+  normalizeDocxText,
+  renderParagraphWithInlineLinks
+} from "@/features/seo/server/docx-style";
 import { HTTP_CLIENT } from "@/features/seo/server/seo-constants";
 import { appEnv } from "@/features/seo/server/env";
 import { getSitePages } from "@/features/seo/server/storage";
@@ -519,8 +525,8 @@ async function buildArticleWithAnthropic(
       },
       instructions: [
         `Produce at least ${sectionCount} H2 sections with 4 substantive paragraphs each.`,
-        "For each section, propose 1-2 internal links chosen from the internalLinkCandidates list (only from that list). Provide anchor text that naturally fits the sentence context.",
-        "Write grounded, operator-level paragraphs — NOT marketing copy. No empty superlatives.",
+        "For each section, propose 1-2 internal links chosen ONLY from the officialLinks list. For every internalLinks entry you output, the exact anchorText string MUST appear verbatim inside one of that section's paragraphs so the downstream DOCX builder can turn it into a clickable hyperlink. Do not put the anchor text only in the internalLinks array; weave it into the prose as natural sentence fragments.",
+        "Write grounded, operator-level paragraphs - NOT marketing copy. No empty superlatives. Prefer plain hyphens over em-dashes.",
         "Include an FAQ with 5-7 question/answer pairs.",
         "Keep metaTitle <= 60 chars and metaDescription <= 155 chars.",
         "Use only facts that are present in the verified official research context. If something is time-sensitive, phrase it carefully, such as 'the official docs list' or 'according to Qubic Docs'.",
@@ -901,7 +907,12 @@ export async function generateLongFormArticle(input: LongFormGenerateInput): Pro
 }
 
 /**
- * Build a DOCX buffer for a long-form article with embedded hyperlinks.
+ * Build a DOCX buffer for a long-form article.
+ *
+ * Internal links are embedded INLINE in the section prose wherever the anchor text
+ * appears naturally. Anchors that don't match are gathered into a single "also
+ * consider linking to ..." sentence at the end of that section, so readers still see
+ * them but the body stays clean instead of ending with a bullet list worksheet.
  */
 export async function buildLongFormDocx(article: LongFormArticle): Promise<Buffer> {
   const children: Paragraph[] = [];
@@ -909,24 +920,24 @@ export async function buildLongFormDocx(article: LongFormArticle): Promise<Buffe
   // Title
   children.push(
     new Paragraph({
-      text: article.title,
+      text: normalizeDocxText(article.title),
       heading: HeadingLevel.HEADING_1,
       alignment: AlignmentType.LEFT
     })
   );
 
-  // Meta
+  // Meta (10pt italic muted)
   children.push(
     new Paragraph({
       children: [
-        new TextRun({ text: `Meta title: ${article.metaTitle}`, italics: true, size: 18 })
+        new TextRun({ text: normalizeDocxText(`Meta title: ${article.metaTitle}`), italics: true, size: 20, color: "4B5563" })
       ]
     })
   );
   children.push(
     new Paragraph({
       children: [
-        new TextRun({ text: `Meta description: ${article.metaDescription}`, italics: true, size: 18 })
+        new TextRun({ text: normalizeDocxText(`Meta description: ${article.metaDescription}`), italics: true, size: 20, color: "4B5563" })
       ]
     })
   );
@@ -934,14 +945,17 @@ export async function buildLongFormDocx(article: LongFormArticle): Promise<Buffe
     new Paragraph({
       children: [
         new TextRun({
-          text: `${article.wordCount} words · ${article.internalLinkCount} internal links · generated via ${article.provider}`,
+          text: normalizeDocxText(
+            `${article.wordCount} words \u00B7 ${article.internalLinkCount} internal links \u00B7 generated via ${article.provider}`
+          ),
           italics: true,
-          size: 18
+          size: 20,
+          color: "4B5563"
         })
-      ]
+      ],
+      spacing: { after: 240 }
     })
   );
-  children.push(new Paragraph({ text: "" }));
 
   // Introduction
   children.push(
@@ -951,50 +965,38 @@ export async function buildLongFormDocx(article: LongFormArticle): Promise<Buffe
     })
   );
   for (const paragraph of article.introduction) {
-    children.push(new Paragraph({ text: paragraph }));
+    children.push(new Paragraph({ text: normalizeDocxText(paragraph) }));
   }
 
   // Sections with embedded hyperlinks
   for (const section of article.sections) {
     children.push(
       new Paragraph({
-        text: section.heading,
+        text: normalizeDocxText(section.heading),
         heading: HeadingLevel.HEADING_2
       })
     );
 
-    // Paragraphs
+    const sectionLinkCandidates = section.internalLinks.map((link) => ({
+      anchorText: link.anchorText,
+      targetUrl: link.targetUrl
+    }));
+    const sectionMatchedUrls = new Set<string>();
+
     for (const paragraph of section.paragraphs) {
-      children.push(new Paragraph({ text: paragraph }));
+      const { paragraph: rendered, matchedUrls } = renderParagraphWithInlineLinks(paragraph, sectionLinkCandidates);
+      matchedUrls.forEach((url) => sectionMatchedUrls.add(url));
+      children.push(rendered);
     }
 
-    // Internal links as annotated list
-    if (section.internalLinks.length > 0) {
-      children.push(
-        new Paragraph({
-          text: "Suggested internal links for this section:",
-          heading: HeadingLevel.HEADING_3
-        })
+    const unmatched = section.internalLinks.filter((link) => !sectionMatchedUrls.has(link.targetUrl));
+    if (unmatched.length > 0) {
+      const furtherReading = buildFurtherReadingParagraph(
+        unmatched.map((link) => ({ anchorText: link.anchorText, targetUrl: link.targetUrl })),
+        "Also consider linking to "
       );
-
-      for (const link of section.internalLinks) {
-        children.push(
-          new Paragraph({
-            children: [
-              new TextRun({ text: "• " }),
-              new ExternalHyperlink({
-                link: link.targetUrl,
-                children: [
-                  new TextRun({
-                    text: link.anchorText,
-                    style: "Hyperlink"
-                  })
-                ]
-              }),
-              new TextRun({ text: ` — ${link.reason}` })
-            ]
-          })
-        );
+      if (furtherReading) {
+        children.push(furtherReading);
       }
     }
   }
@@ -1007,7 +1009,7 @@ export async function buildLongFormDocx(article: LongFormArticle): Promise<Buffe
     })
   );
   for (const paragraph of article.conclusion) {
-    children.push(new Paragraph({ text: paragraph }));
+    children.push(new Paragraph({ text: normalizeDocxText(paragraph) }));
   }
 
   // FAQ
@@ -1021,15 +1023,16 @@ export async function buildLongFormDocx(article: LongFormArticle): Promise<Buffe
     for (const item of article.faq) {
       children.push(
         new Paragraph({
-          text: item.question,
+          text: normalizeDocxText(item.question),
           heading: HeadingLevel.HEADING_3
         })
       );
-      children.push(new Paragraph({ text: item.answer }));
+      children.push(new Paragraph({ text: normalizeDocxText(item.answer) }));
     }
   }
 
   const doc = new Document({
+    styles: DOCX_DEFAULT_STYLES,
     sections: [{ children }]
   });
 

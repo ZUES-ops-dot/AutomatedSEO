@@ -3,6 +3,7 @@
 import { AlignmentType, Document, HeadingLevel, Paragraph, TextRun, Packer } from "docx";
 
 import { appendAuditEvent } from "@/features/seo/server/audit-log";
+import { DOCX_DEFAULT_STYLES, normalizeDocxText } from "@/features/seo/server/docx-style";
 import { publishDraft } from "@/features/seo/server/publishing";
 import { getStoredDraftById } from "@/features/seo/server/storage";
 
@@ -62,7 +63,7 @@ export async function downloadDraftDocxAction(draftId: string): Promise<DraftDoc
 
     children.push(
       new Paragraph({
-        text: draft.title,
+        text: normalizeDocxText(draft.title),
         heading: HeadingLevel.HEADING_1,
         alignment: AlignmentType.LEFT
       })
@@ -70,40 +71,39 @@ export async function downloadDraftDocxAction(draftId: string): Promise<DraftDoc
 
     children.push(
       new Paragraph({
-        children: [new TextRun({ text: `Meta title: ${draft.metaTitle}`, italics: true, size: 18 })]
+        children: [new TextRun({ text: normalizeDocxText(`Meta title: ${draft.metaTitle}`), italics: true, size: 20, color: "4B5563" })]
       })
     );
     children.push(
       new Paragraph({
-        children: [new TextRun({ text: `Meta description: ${draft.metaDescription}`, italics: true, size: 18 })]
+        children: [new TextRun({ text: normalizeDocxText(`Meta description: ${draft.metaDescription}`), italics: true, size: 20, color: "4B5563" })],
+        spacing: { after: 240 }
       })
     );
 
     if (draft.summary) {
-      children.push(new Paragraph({ text: "" }));
       children.push(
         new Paragraph({
           text: "Summary",
           heading: HeadingLevel.HEADING_2
         })
       );
-      children.push(new Paragraph({ text: draft.summary }));
+      children.push(new Paragraph({ text: normalizeDocxText(draft.summary) }));
     }
 
     for (const section of draft.sections) {
       children.push(
         new Paragraph({
-          text: section.heading,
+          text: normalizeDocxText(section.heading),
           heading: HeadingLevel.HEADING_2
         })
       );
       for (const paragraph of section.paragraphs) {
-        children.push(new Paragraph({ text: paragraph }));
+        children.push(new Paragraph({ text: normalizeDocxText(paragraph) }));
       }
     }
 
     if (draft.sources && draft.sources.length > 0) {
-      children.push(new Paragraph({ text: "" }));
       children.push(
         new Paragraph({
           text: "Sources",
@@ -111,12 +111,11 @@ export async function downloadDraftDocxAction(draftId: string): Promise<DraftDoc
         })
       );
       for (const source of draft.sources) {
-        children.push(new Paragraph({ text: `• ${source}` }));
+        children.push(new Paragraph({ text: normalizeDocxText(`\u2022 ${source}`) }));
       }
     }
 
     if (draft.reviewFlags && draft.reviewFlags.length > 0) {
-      children.push(new Paragraph({ text: "" }));
       children.push(
         new Paragraph({
           text: "Review flags",
@@ -124,11 +123,11 @@ export async function downloadDraftDocxAction(draftId: string): Promise<DraftDoc
         })
       );
       for (const flag of draft.reviewFlags) {
-        children.push(new Paragraph({ text: `• ${flag}` }));
+        children.push(new Paragraph({ text: normalizeDocxText(`\u2022 ${flag}`) }));
       }
     }
 
-    const doc = new Document({ sections: [{ children }] });
+    const doc = new Document({ styles: DOCX_DEFAULT_STYLES, sections: [{ children }] });
     const buffer = await Packer.toBuffer(doc);
 
     await appendAuditEvent({
