@@ -164,7 +164,14 @@ export function LongFormGenerator() {
                 max={6000}
                 step={100}
                 value={targetWordCount}
-                onChange={(e) => setTargetWordCount(Number(e.target.value))}
+                onChange={(e) => {
+                  const raw = Number(e.target.value);
+                  if (!Number.isFinite(raw) || raw <= 0) {
+                    setTargetWordCount(2500);
+                    return;
+                  }
+                  setTargetWordCount(Math.min(6000, Math.max(500, Math.round(raw))));
+                }}
                 className="surface mt-1.5 w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white focus:border-cyan-400/35 focus:outline-none"
               />
             </label>
@@ -195,7 +202,7 @@ export function LongFormGenerator() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              disabled={generating || topic.trim().length === 0}
+              disabled={generating || gapLoading || topic.trim().length === 0}
               onClick={() => void handleGenerate()}
               className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/15 disabled:opacity-50"
             >
@@ -205,7 +212,7 @@ export function LongFormGenerator() {
 
             <button
               type="button"
-              disabled={gapLoading}
+              disabled={gapLoading || generating}
               onClick={() => void handleAnalyzeGaps()}
               className="inline-flex items-center gap-2 rounded-xl border border-violet-400/25 bg-violet-400/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-400/15 disabled:opacity-50"
               title="Find keywords you're not ranking for and topic ideas to target"

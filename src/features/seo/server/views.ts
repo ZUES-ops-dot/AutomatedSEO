@@ -1,6 +1,5 @@
 import { contentIdeas as seededIdeas, trendSeries as seededTrendSeries } from "@/features/seo/data/demo-data";
 import { getConnectorCatalog, getConnectorSummary } from "@/features/seo/server/connectors";
-import { getCachedIdeasIfValid, setIdeasCache } from "@/features/seo/server/idea-cache";
 import { getMorningscoreAttentionItems } from "@/features/seo/server/morningscore-attention";
 import { getMorningscoreDashboardMetrics } from "@/features/seo/server/morningscore-dashboard";
 import { listJobSchedules } from "@/features/seo/server/scheduler";
@@ -49,17 +48,6 @@ function deriveIdeasFromOpportunities(opportunities: Opportunity[]): ContentIdea
   }));
 
   return generated.length > 0 ? generated : seededIdeas;
-}
-
-async function deriveIdeas(): Promise<ContentIdea[]> {
-  const cached = getCachedIdeasIfValid();
-  if (cached) {
-    return cached;
-  }
-  const opportunities = await getReadableOpportunities();
-  const ideas = deriveIdeasFromOpportunities(opportunities);
-  setIdeasCache(ideas);
-  return ideas;
 }
 
 function buildTrendSeries(values: Array<{ date: string; impressions: number; clicks: number }>): TrendSeries[] {
@@ -166,11 +154,6 @@ function buildPageAttention(
 
 export async function getSuggestionsData() {
   return getReadableOpportunities();
-}
-
-export async function getContentStudioViewData() {
-  const [studio, ideas] = await Promise.all([getContentStudioData(), deriveIdeas()]);
-  return { ...studio, ideas };
 }
 
 export async function getSystemQuickStatsData(): Promise<SystemQuickStats> {

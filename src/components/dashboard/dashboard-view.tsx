@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import type { Route } from "next";
 import { AlertTriangle, Check, Clock3, Loader2, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -48,16 +47,12 @@ export function DashboardView({ data }: DashboardViewProps) {
   const {
     connectors,
     doNowAction,
-    doNow,
     jobs,
     metrics,
     pagesNeedingAttention,
     topOpportunity,
     trendSeries,
     activeQueue,
-    ideas,
-    briefs,
-    drafts,
     schedules
   } = data;
   const [doNowState, setDoNowState] = useState<{ loading: boolean; message: string; tone: "success" | "error" | "" }>({
@@ -66,34 +61,9 @@ export function DashboardView({ data }: DashboardViewProps) {
     tone: ""
   });
 
-  const opportunityItems = [topOpportunity, ...activeQueue.filter((item) => item.id !== topOpportunity.id)].slice(0, 5);
-  const opportunityLookup = new Map([topOpportunity, ...activeQueue, ...doNow].map((item) => [item.id, item]));
-  const contentRows = [
-    ...drafts.map((item) => ({
-      id: item.id,
-      title: item.title,
-      stage: "draft",
-      status: item.status === "review_required" ? "review" : "draft",
-      score: opportunityLookup.get(item.supportingOpportunityId)?.score ?? null,
-      meta: item.metaTitle
-    })),
-    ...briefs.map((item) => ({
-      id: item.id,
-      title: item.title,
-      stage: "brief",
-      status: "review",
-      score: opportunityLookup.get(item.supportingOpportunityId)?.score ?? null,
-      meta: item.format
-    })),
-    ...ideas.map((item) => ({
-      id: item.id,
-      title: item.title,
-      stage: "idea",
-      status: "draft",
-      score: opportunityLookup.get(item.relatedOpportunityId)?.score ?? null,
-      meta: item.freshness
-    }))
-  ].slice(0, 4);
+  const opportunityItems = topOpportunity
+    ? [topOpportunity, ...activeQueue.filter((item) => item.id !== topOpportunity.id)].slice(0, 5)
+    : activeQueue.slice(0, 5);
   const cycleSteps = jobs.slice(0, 5);
   const activeSchedules = schedules.filter((schedule) => schedule.enabled).slice(0, 3);
   const activityItems: Array<{
@@ -316,59 +286,6 @@ export function DashboardView({ data }: DashboardViewProps) {
                 })}
               </div>
             ) : null}
-          </div>
-        </Panel>
-      </motion.section>
-
-      <motion.section variants={fadeUp}>
-        <Panel
-          title="Content pipeline"
-          action={
-            <Link href={"/generate" as Route} className="mono text-[11px] text-cyan-300 transition hover:text-cyan-200">
-              Generate draft →
-            </Link>
-          }
-          contentClassName="px-5 pb-2 pt-4"
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-white/[0.07]">
-                  <th className="mono pb-2 text-left text-[10px] font-normal uppercase tracking-[0.1em] text-white/20">Title / context</th>
-                  <th className="mono pb-2 text-left text-[10px] font-normal uppercase tracking-[0.1em] text-white/20">Status</th>
-                  <th className="mono pb-2 text-left text-[10px] font-normal uppercase tracking-[0.1em] text-white/20">SEO score</th>
-                  <th className="mono pb-2 text-left text-[10px] font-normal uppercase tracking-[0.1em] text-white/20">Stage</th>
-                  <th className="mono pb-2 text-left text-[10px] font-normal uppercase tracking-[0.1em] text-white/20">Meta</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contentRows.map((row) => (
-                  <tr key={row.id} className="border-b border-white/[0.04] last:border-b-0">
-                    <td className="py-3 pr-4">
-                      <div className="text-[12.5px] font-semibold text-white">{row.title}</div>
-                      <div className="mono mt-0.5 text-[11px] text-white/40">{row.meta}</div>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <Badge tone={row.status === "review" ? "cyan" : "amber"}>{row.status}</Badge>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <div className="flex min-w-[120px] items-center gap-2">
-                        <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/[0.08]">
-                          <div className={`h-full rounded-full ${row.score && row.score < 65 ? "bg-amber-400" : "bg-cyan-300"}`} style={{ width: `${row.score ?? 18}%` }} />
-                        </div>
-                        <span className="mono min-w-[28px] text-[11px] text-white/45">{row.score ?? "--"}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <span className="mono text-[11px] text-white/45">{row.stage}</span>
-                    </td>
-                    <td className="py-3">
-                      <span className="mono text-[11px] text-white/25">linked</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </Panel>
       </motion.section>

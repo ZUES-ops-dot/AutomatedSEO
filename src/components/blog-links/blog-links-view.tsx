@@ -35,7 +35,7 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
     try {
       return new URL(blogSiteUrl).hostname;
     } catch {
-      return "blogs.qubic.org";
+      return "qubic.org";
     }
   }, [blogSiteUrl]);
 
@@ -64,17 +64,20 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
     return () => window.clearTimeout(t);
   }, [search]);
 
-  const loadList = useCallback(async () => {
+  const loadList = useCallback(async (signal?: AbortSignal) => {
     setListLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/blog-links?q=${encodeURIComponent(debouncedSearch)}`);
+      const res = await fetch(`/api/blog-links?q=${encodeURIComponent(debouncedSearch)}`, { signal });
       const data = (await res.json()) as { pages?: BlogListItem[]; error?: string };
       if (!res.ok) {
         throw new Error(data.error ?? "Search failed.");
       }
       setPages(data.pages ?? []);
     } catch (e) {
+      if ((e as { name?: string })?.name === "AbortError") {
+        return;
+      }
       setError(e instanceof Error ? e.message : "Search failed.");
     } finally {
       setListLoading(false);
@@ -82,7 +85,9 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
   }, [debouncedSearch]);
 
   useEffect(() => {
-    void loadList();
+    const controller = new AbortController();
+    void loadList(controller.signal);
+    return () => controller.abort();
   }, [loadList]);
 
   async function runPack() {
@@ -151,7 +156,7 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
         setCrawlMessage(
           blogCount > 0
             ? `Crawl finished: ${blogCount} blog page(s) indexed. Refresh the list below.`
-            : `Crawl finished but 0 blog pages were indexed. Check Playwright on the server, sitemap at ${blogHost}/sitemap.xml, and BLOG_SITE_URL / BLOG_URL_PATH_PREFIX.`
+            : `Crawl finished but 0 blog pages were indexed. Check Playwright on the server, the sitemap at ${blogHost}/sitemap.xml (blog posts should appear under paths matching BLOG_URL_PATH_PREFIX), and BLOG_SITE_URL.`
         );
       } else {
         setCrawlMessage(result.message ?? "Crawl completed.");
