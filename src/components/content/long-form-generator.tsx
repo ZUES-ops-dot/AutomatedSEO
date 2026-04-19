@@ -125,7 +125,7 @@ export function LongFormGenerator() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <Panel
         title="Generate a long-form article"
         subtitle="Enter a topic and generate a 2500+ word blog post with embedded internal links to your existing site pages. Export as DOCX for review and publishing."
@@ -199,12 +199,12 @@ export function LongFormGenerator() {
             />
           </label>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <button
               type="button"
               disabled={generating || gapLoading || topic.trim().length === 0}
               onClick={() => void handleGenerate()}
-              className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/15 disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/15 disabled:opacity-50 sm:w-auto"
             >
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {generating ? "Generating article (up to 60s)…" : "Generate article"}
@@ -214,7 +214,7 @@ export function LongFormGenerator() {
               type="button"
               disabled={gapLoading || generating}
               onClick={() => void handleAnalyzeGaps()}
-              className="inline-flex items-center gap-2 rounded-xl border border-violet-400/25 bg-violet-400/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-400/15 disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-violet-400/25 bg-violet-400/10 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-400/15 disabled:opacity-50 sm:w-auto"
               title="Find keywords you're not ranking for and topic ideas to target"
             >
               {gapLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
@@ -226,7 +226,7 @@ export function LongFormGenerator() {
                 type="button"
                 disabled={downloading}
                 onClick={() => void handleDownload()}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2 text-sm text-white/80 transition hover:bg-white/[0.07] disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2 text-sm text-white/80 transition hover:bg-white/[0.07] disabled:opacity-50 sm:w-auto"
               >
                 {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 Download DOCX
@@ -258,7 +258,7 @@ export function LongFormGenerator() {
                   {gapReport.rankingGaps.slice(0, 10).map((gap, index) => (
                     <div
                       key={index}
-                      className="flex items-start justify-between gap-3 rounded-xl border border-violet-400/10 bg-violet-400/[0.04] p-3"
+                      className="flex flex-col gap-3 rounded-xl border border-violet-400/10 bg-violet-400/[0.04] p-3 sm:flex-row sm:items-start sm:justify-between"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -267,7 +267,7 @@ export function LongFormGenerator() {
                           <Badge tone="slate">Pos #{Math.round(gap.position)}</Badge>
                           <Badge tone="slate">{gap.impressions} impr</Badge>
                         </div>
-                        <p className="mono mt-1 text-[10px] text-white/30 truncate">{gap.page}</p>
+                        <p className="mono mt-1 break-all text-[10px] text-white/30">{gap.page}</p>
                         <p className="mt-1 text-xs text-white/55">{gap.reason}</p>
                       </div>
                       <button
@@ -276,7 +276,7 @@ export function LongFormGenerator() {
                           setTopic(gap.query);
                           setPrimaryKeyword(gap.query);
                         }}
-                        className="shrink-0 rounded-lg border border-violet-400/20 bg-violet-400/10 px-3 py-1.5 text-xs text-violet-200 transition hover:bg-violet-400/15"
+                        className="w-full shrink-0 rounded-lg border border-violet-400/20 bg-violet-400/10 px-3 py-1.5 text-xs text-violet-200 transition hover:bg-violet-400/15 sm:w-auto"
                       >
                         Use as topic
                       </button>
@@ -300,7 +300,7 @@ export function LongFormGenerator() {
                   {gapReport.topicGaps.map((gap, index) => (
                     <div
                       key={index}
-                      className="flex items-start justify-between gap-3 rounded-xl border border-cyan-400/10 bg-cyan-400/[0.04] p-3"
+                      className="flex flex-col gap-3 rounded-xl border border-cyan-400/10 bg-cyan-400/[0.04] p-3 sm:flex-row sm:items-start sm:justify-between"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -329,7 +329,7 @@ export function LongFormGenerator() {
                             setAngle(gap.suggestedAngle);
                           }
                         }}
-                        className="shrink-0 rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-200 transition hover:bg-cyan-400/15"
+                        className="w-full shrink-0 rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-200 transition hover:bg-cyan-400/15 sm:w-auto"
                       >
                         Use as topic
                       </button>
@@ -354,8 +354,8 @@ export function LongFormGenerator() {
 
             <div>
               <h2 className="text-xl font-semibold text-white">{article.title}</h2>
-              <p className="mono mt-1 text-xs text-white/40">Meta title: {article.metaTitle}</p>
-              <p className="mono text-xs text-white/40">Meta description: {article.metaDescription}</p>
+              <p className="mono mt-1 break-words text-xs text-white/40">Meta title: {article.metaTitle}</p>
+              <p className="mono break-words text-xs text-white/40">Meta description: {article.metaDescription}</p>
             </div>
 
             <div>

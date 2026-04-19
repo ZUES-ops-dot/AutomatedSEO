@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Viewport } from "next";
 import { DM_Mono, Syne } from "next/font/google";
 
 import { AppShell } from "@/components/app-shell";
@@ -21,6 +22,12 @@ export const metadata = {
   title: "Qubic SEO Autopilot",
   description:
     "A Qubic-focused SEO command center for audits, suggestions, blog workflows, connector health, and CSV imports."
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover"
 };
 
 interface RootLayoutProps {

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Clock3, Loader2, Menu, Plus, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { SeoOpsPipeline } from "@/components/seo-ops-pipeline";
 import { navigationItems, pageMeta } from "@/features/seo/config/navigation";
@@ -46,6 +46,19 @@ export function AppShell({ children, stats }: AppShellProps) {
   const [cycleBanner, setCycleBanner] = useState<{ ok: boolean; text: string; findings?: CycleFindings } | null>(null);
   const [cyclePending, startCycle] = useTransition();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileNavOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileNavOpen]);
 
   const navSections = [
     {
@@ -188,8 +201,8 @@ export function AppShell({ children, stats }: AppShellProps) {
         </div>
       </aside>
 
-      <main className="min-w-0 lg:ml-[220px]">
-        <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between border-b border-white/[0.07] px-5 lg:px-7">
+      <main className="min-w-0 overflow-x-clip lg:ml-[220px]">
+        <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-white/[0.07] px-3 sm:px-5 lg:px-7">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -199,14 +212,14 @@ export function AppShell({ children, stats }: AppShellProps) {
             >
               <Menu className="h-4 w-4" />
             </button>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="mono truncate text-[11px] text-white/45">
                 <span className="text-cyan-300">qubic.org</span> / {pathname === "/" ? "dashboard" : pathname.slice(1)}
               </div>
               <h1 className="mt-0.5 truncate text-[14px] font-semibold text-white sm:text-[15px]">{currentMeta.title}</h1>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <span className="surface hidden items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-white/55 sm:flex" aria-hidden>
               <Clock3 className="h-3 w-3" />
               <span className="mono">Live</span>
@@ -215,7 +228,7 @@ export function AppShell({ children, stats }: AppShellProps) {
               type="button"
               disabled={cyclePending}
               onClick={handleRunCycle}
-              className="flex items-center gap-1.5 rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1.5 text-xs text-cyan-300 transition hover:bg-cyan-400/15 disabled:opacity-60 sm:px-3"
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-2 py-1.5 text-xs text-cyan-300 transition hover:bg-cyan-400/15 disabled:opacity-60 sm:px-3"
               title="Run the full SEO cycle: crawl, analyze, generate opportunities"
             >
               {cyclePending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
@@ -239,7 +252,7 @@ export function AppShell({ children, stats }: AppShellProps) {
           </div>
         ) : null}
 
-        <section className="px-4 pb-24 pt-5 sm:px-5 sm:py-6 lg:px-7 lg:pb-6">
+        <section className="overflow-x-clip px-4 pb-28 pt-5 sm:px-5 sm:py-6 lg:px-7 lg:pb-6">
           <div className="mb-5 max-w-3xl">
             <p className="mono text-[10px] uppercase tracking-[0.12em] text-white/20">
               {pathname === "/" ? "Overview" : pathname.slice(1).replaceAll("/", " · ")}
@@ -280,7 +293,7 @@ export function AppShell({ children, stats }: AppShellProps) {
               aria-hidden
             />
             <motion.aside
-              className="glass absolute inset-y-0 left-0 flex w-[270px] max-w-[85vw] flex-col border-r border-white/[0.08] px-0 py-5"
+              className="glass absolute inset-y-0 left-0 flex w-[270px] max-w-[85vw] flex-col overflow-x-hidden border-r border-white/[0.08] px-0 py-5"
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
@@ -367,7 +380,7 @@ export function AppShell({ children, stats }: AppShellProps) {
       </AnimatePresence>
 
       <nav
-        className="glass fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-white/[0.08] px-2 py-2 lg:hidden"
+        className="glass fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 items-stretch border-t border-white/[0.08] px-1 py-2 lg:hidden"
         aria-label="Primary"
         style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
       >
@@ -379,12 +392,12 @@ export function AppShell({ children, stats }: AppShellProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex min-w-[52px] flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[10px] font-medium transition",
+                "flex min-w-0 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-[10px] font-medium transition",
                 active ? "text-cyan-300" : "text-white/45 hover:text-white/80"
               )}
             >
               <Icon className={cn("h-4 w-4", active ? "opacity-100" : "opacity-80")} />
-              <span className="leading-none">{item.label}</span>
+              <span className="max-w-full truncate leading-none">{item.label}</span>
               {active ? (
                 <motion.span
                   layoutId="mobile-tab-dot"

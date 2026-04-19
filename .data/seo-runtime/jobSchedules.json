@@ -1,5 +1,27 @@
 [
   {
+    "id": "schedule-pagespeed",
+    "job": "pagespeed",
+    "cadence": "Every 24 hours",
+    "intervalMinutes": 1440,
+    "enabled": true,
+    "lastRunAt": null,
+    "nextRunAt": "2026-04-20T00:29:07.599Z",
+    "lastStatus": null,
+    "detail": "Sync onsite crawl snapshots from Morningscore (PageSpeed connector slot)."
+  },
+  {
+    "id": "schedule-search-signals",
+    "job": "search-signals",
+    "cadence": "Every 24 hours",
+    "intervalMinutes": 1440,
+    "enabled": true,
+    "lastRunAt": null,
+    "nextRunAt": "2026-04-20T00:29:07.599Z",
+    "lastStatus": null,
+    "detail": "Sync keyword rankings from Morningscore (search performance rows)."
+  },
+  {
     "id": "schedule-monitoring",
     "job": "monitor-content",
     "cadence": "Every 24 hours",

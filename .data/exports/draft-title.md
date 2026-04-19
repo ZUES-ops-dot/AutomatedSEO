@@ -3,7 +3,7 @@ title: "Draft title"
 slug: "draft-title"
 metaTitle: "meta"
 metaDescription: "desc"
-publishedAt: "2026-04-18T20:07:11.013Z"
+publishedAt: "2026-04-19T16:18:54.095Z"
 targetUrls: ["https://qubic.org/draft-title"]
 ---
 
