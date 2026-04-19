@@ -34,14 +34,23 @@ export async function getMorningscoreDashboardMetrics(): Promise<DashboardMetric
 
     const metrics: DashboardMetric[] = [];
 
+    const trafficFormatter =
+      details.currency && typeof details.traffic === "number"
+        ? new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: details.currency,
+            maximumFractionDigits: 0
+          })
+        : null;
+
     if (details.score != null && Number.isFinite(details.score)) {
       metrics.push({
         id: "metric-ms-morningscore",
         label: "Morningscore",
         value: String(Math.round(details.score)),
         delta:
-          details.traffic != null && details.currency
-            ? `Traffic value ${details.traffic} ${details.currency}`
+          trafficFormatter && typeof details.traffic === "number"
+            ? `Traffic value ${trafficFormatter.format(details.traffic)}`
             : "Visibility score",
         tone: "accent"
       });
@@ -68,17 +77,35 @@ export async function getMorningscoreDashboardMetrics(): Promise<DashboardMetric
       });
     }
 
+    if (details.metrics?.domain_rating != null && Number.isFinite(details.metrics.domain_rating)) {
+      metrics.push({
+        id: "metric-ms-domain-rating",
+        label: "Domain rating",
+        value: String(Math.round(details.metrics.domain_rating)),
+        delta: "Authority estimate (per Morningscore)",
+        tone: "accent"
+      });
+    }
+
     try {
       await sleepMs(MORNINGSCORE_REQUEST_GAP_MS);
       const health = await getMorningscoreOverallHealth(appEnv.morningscoreApiKey, domainId);
       if (Number.isFinite(health.score)) {
-        const pagesCount = Number.isFinite(health.pages_count) ? Math.max(0, Math.round(health.pages_count)) : 0;
+        const pagesCount =
+          typeof health.pages_count === "number" && Number.isFinite(health.pages_count)
+            ? Math.max(0, Math.round(health.pages_count))
+            : 0;
+        const prev = typeof health.prev_score === "number" && Number.isFinite(health.prev_score) ? health.prev_score : null;
+        const diff = prev != null ? Math.round(health.score - prev) : null;
+        const diffLabel = diff == null ? null : diff > 0 ? `+${diff}` : String(diff);
+        const healthTone: "success" | "warning" | "danger" =
+          health.score >= 80 ? "success" : health.score >= 60 ? "warning" : "danger";
         metrics.push({
           id: "metric-ms-health",
           label: "Healthscore",
           value: String(Math.round(health.score)),
-          delta: `${pagesCount} pages in crawl`,
-          tone: health.score >= 70 ? "success" : "warning"
+          delta: diffLabel != null ? `${diffLabel} vs previous crawl • ${pagesCount} pages` : `${pagesCount} pages in crawl`,
+          tone: healthTone
         });
       }
     } catch (error) {

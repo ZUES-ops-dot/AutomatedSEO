@@ -104,10 +104,10 @@ export async function syncMorningscoreOnsiteSnapshots(input: OnsiteInput = {}) {
       .slice(0, 12);
 
     const capturedAt = new Date().toISOString();
-    const snapshots: PageSpeedSnapshot[] = sorted.map((row, index) => {
+    const snapshots: PageSpeedSnapshot[] = sorted.map((row) => {
       const url = resolvePageUrl(row);
       return {
-        id: `ms-onsite-${strategy}-${slugify(url)}-${capturedAt.slice(0, 10)}-${index}`,
+        id: `ms-onsite-${strategy}-${slugify(url)}-${capturedAt.slice(0, 10)}`,
         url,
         strategy,
         performanceScore: performanceScoreFromRow(row),

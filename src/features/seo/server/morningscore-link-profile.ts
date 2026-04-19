@@ -6,11 +6,12 @@ import {
   resolveMorningscoreDomainId,
   sleepMs
 } from "@/features/seo/server/morningscore-api";
+import { logSeoEvent } from "@/lib/seo-log";
 
 export type MorningscoreLinkProfileContext = {
   refdomains: number | null;
   avgBacklinkStrength: number | null;
-  /** Additive boost applied to opportunity demand signals (0–8). */
+  /** Additive boost applied to opportunity demand signals (0–8 before scaling in opportunity-engine). */
   boostPoints: number;
 };
 
@@ -67,7 +68,10 @@ export async function getMorningscoreLinkProfileContext(): Promise<MorningscoreL
       avgBacklinkStrength: avg,
       boostPoints: Math.min(8, boost)
     };
-  } catch {
+  } catch (error) {
+    logSeoEvent("warn", "Morningscore link profile context unavailable; opportunity scoring proceeds without authority boost.", {
+      error: error instanceof Error ? error.message : String(error)
+    });
     return { refdomains: null, avgBacklinkStrength: null, boostPoints: 0 };
   }
 }

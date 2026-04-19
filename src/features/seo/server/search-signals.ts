@@ -8,6 +8,7 @@ import {
 } from "@/features/seo/server/morningscore-api";
 import { getLatestConnectorRun, getSearchPerformanceRows, saveConnectorRun, saveSearchPerformanceRows } from "@/features/seo/server/storage";
 import type { ConnectorRun, SearchPerformanceRow, SearchSignalProvider } from "@/features/seo/types";
+import { logSeoEvent } from "@/lib/seo-log";
 
 export interface SearchSignalInput {
   provider?: SearchSignalProvider;
@@ -187,6 +188,8 @@ async function fetchMorningscoreRows(
     const clicks = Math.max(0, Math.round(row.est_traffic ?? 0));
     const ctr = impressions > 0 ? Math.min(1, clicks / impressions) : 0;
     const position = row.position ?? 100;
+    const trafficValue = typeof row.traffic_value === "number" && Number.isFinite(row.traffic_value) ? row.traffic_value : undefined;
+    const cpc = typeof row.cpc === "number" && Number.isFinite(row.cpc) ? row.cpc : undefined;
 
     return {
       id: buildRowId("morningscore", query, page, capturedAt),
@@ -198,6 +201,8 @@ async function fetchMorningscoreRows(
       ctr,
       position,
       country: row.geotarget?.country_code ?? row.gl ?? undefined,
+      trafficValue,
+      cpc,
       sourceRunId: runId,
       capturedAt
     };
@@ -218,7 +223,10 @@ async function tryResolveDomainLabel(): Promise<string> {
       appEnv.primarySiteUrl
     );
     return id;
-  } catch {
+  } catch (error) {
+    logSeoEvent("warn", "Morningscore connectivity probe failed; connector status may appear configured even though the API is unreachable.", {
+      error: error instanceof Error ? error.message : String(error)
+    });
     return appEnv.morningscoreDomainId || "";
   }
 }
@@ -290,12 +298,16 @@ export async function syncSearchSignals(input: SearchSignalInput = {}): Promise<
     };
   } catch (error) {
     const fallbackProvider: SearchSignalProvider = input.manualRows && input.manualRows.length > 0 ? "manual_csv" : "demo_seed";
+    const requestedManualWithoutRows =
+      requestedProvider === "manual_csv" && (!input.manualRows || input.manualRows.length === 0);
     const fallbackRun = buildConnectorRun(
       fallbackProvider,
       "fallback",
       error instanceof Error
         ? `${error.message} Falling back to ${fallbackProvider === "manual_csv" ? "manual rows" : "seeded demo rows"}.`
-        : `Connector fallback engaged using ${fallbackProvider}.`,
+        : requestedManualWithoutRows
+          ? `Manual CSV was requested but no rows were supplied; falling back to seeded demo rows.`
+          : `Connector fallback engaged using ${fallbackProvider}.`,
       0,
       startedAt,
       {

@@ -420,6 +420,10 @@ export interface SearchPerformanceRow {
   position: number;
   country?: string;
   device?: string;
+  /** Morningscore-only: estimated monetary traffic value per month. */
+  trafficValue?: number;
+  /** Morningscore-only: cost-per-click estimate from ad auction data. */
+  cpc?: number;
   sourceRunId?: string;
   capturedAt: string;
 }

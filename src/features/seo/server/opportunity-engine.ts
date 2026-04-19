@@ -13,10 +13,13 @@ function applyLinkProfileBoost(candidate: OpportunityCandidate, boost: number): 
   if (boost <= 0) {
     return candidate;
   }
+  // Scale boost so Morningscore link profile can meaningfully shift priority bands
+  // (weights are 0.15/0.1 → 8*0.15+4*0.1 ≈ 1.6pt max under the old cap).
+  const scaled = Math.min(20, boost * 2.5);
   return {
     ...candidate,
-    demandSignal: Math.min(100, candidate.demandSignal + boost),
-    internalLinkSupport: Math.min(100, candidate.internalLinkSupport + Math.round(boost / 2))
+    demandSignal: Math.min(100, candidate.demandSignal + scaled),
+    internalLinkSupport: Math.min(100, candidate.internalLinkSupport + Math.round(scaled / 2))
   };
 }
 
@@ -143,7 +146,13 @@ export function buildRefreshCandidate(row: SearchPerformanceRow, page: SitePage 
       `Primary URL observed: ${row.page}`
     ],
     sourceTypes: [
-      "morningscore",
+      row.provider === "morningscore"
+        ? "morningscore"
+        : row.provider === "manual_csv"
+          ? "manual_csv"
+          : row.provider === "google_search_console"
+            ? "google_search_console"
+            : "demo_seed",
       ...(page
         ? [
             page.site === "docs" ? "docs_crawl" : page.site === "blog" ? "blog_crawl" : "site_crawl"
@@ -160,7 +169,7 @@ export function buildRefreshCandidate(row: SearchPerformanceRow, page: SitePage 
     cannibalizationRisk,
     difficultyGap,
     existingPageTargetsIntent: true,
-    rankingButUnderperforming: row.position <= 20 && row.impressions >= 20,
+    rankingButUnderperforming: row.position <= 20 && (row.provider === "morningscore" ? row.impressions >= 200 : row.impressions >= 20),
     ctrWeak: row.ctr < 0.06,
     staleOrMissingSubtopics: Boolean(page?.issues.length),
     repeatedIntent: false,
@@ -207,7 +216,16 @@ export function buildSupportCandidate(rows: SearchPerformanceRow[], existingStat
         ? "Traffic is landing on root-like pages, suggesting the intent lacks a dedicated support asset."
         : "Related demand is distributed across multiple URLs without a single canonical support page."
     ],
-    sourceTypes: ["morningscore", "search_gap_review"],
+    sourceTypes: [
+      topRow.provider === "morningscore"
+        ? "morningscore"
+        : topRow.provider === "manual_csv"
+          ? "manual_csv"
+          : topRow.provider === "google_search_console"
+            ? "google_search_console"
+            : "demo_seed",
+      "search_gap_review"
+    ],
     businessRelevance: clamp(82 + rootLikePages.length * 4),
     demandSignal: clamp(Math.log10(Math.max(totalImpressions, 1)) * 40 + 15),
     ctrGap: clamp((0.1 - totalClicks / Math.max(totalImpressions, 1)) * 500 + 28),
@@ -393,10 +411,15 @@ export async function generateOpportunityFeed(input: OpportunityEngineInput = {}
     getMorningscoreLinkProfileContext()
   ]);
 
-  const refreshCandidates = searchRows.slice(0, 12).map((row) => buildRefreshCandidate(row, findClosestPage(row, pages), existingById.get(`opp-refresh-${slugify(row.query)}-${slugify(row.page)}`)?.status));
+  const rankedSearchRows = [...searchRows].sort((left, right) => {
+    const leftValue = typeof left.trafficValue === "number" ? left.trafficValue : left.impressions;
+    const rightValue = typeof right.trafficValue === "number" ? right.trafficValue : right.impressions;
+    return rightValue - leftValue;
+  });
+  const refreshCandidates = rankedSearchRows.slice(0, 12).map((row) => buildRefreshCandidate(row, findClosestPage(row, pages), existingById.get(`opp-refresh-${slugify(row.query)}-${slugify(row.page)}`)?.status));
   const groupedSupportRows = new Map<string, SearchPerformanceRow[]>();
 
-  for (const row of searchRows) {
+  for (const row of rankedSearchRows) {
     const key = inferCluster(row.query);
     groupedSupportRows.set(key, [...(groupedSupportRows.get(key) ?? []), row]);
   }

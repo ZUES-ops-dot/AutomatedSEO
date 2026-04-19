@@ -11,6 +11,8 @@ const RESOLVED_DOMAIN_ID_TTL_MS = 120_000;
 type ResolvedDomainCacheEntry = { domainId: string; expiresAt: number };
 
 const resolvedDomainIdCache = new Map<string, ResolvedDomainCacheEntry>();
+/** Deduplicates concurrent cold-miss callers so only one `GET /v1/domains` is in flight per cache key. */
+const resolvedDomainIdInflight = new Map<string, Promise<string>>();
 
 function resolvedDomainIdCacheKey(apiKey: string, primarySiteUrl: string) {
   return `${apiKey}::${primarySiteUrl}`;
@@ -130,27 +132,40 @@ export async function resolveMorningscoreDomainId(apiKey: string, explicitDomain
     return cached.domainId;
   }
 
-  const hostname = new URL(primarySiteUrl).hostname;
-  const domains = await listMorningscoreDomains(apiKey);
-  await sleepMs(MORNINGSCORE_REQUEST_GAP_MS);
-  const resolved = resolveDomainIdFromHostname(domains, hostname);
-  if (!resolved) {
-    throw new Error(
-      `No Morningscore domain matches ${hostname}. Set MORNINGSCORE_DOMAIN_ID or add the site in Morningscore.`
-    );
+  const pending = resolvedDomainIdInflight.get(cacheKey);
+  if (pending) {
+    return pending;
   }
 
-  resolvedDomainIdCache.set(cacheKey, { domainId: resolved, expiresAt: now + RESOLVED_DOMAIN_ID_TTL_MS });
+  const resolution = (async () => {
+    const hostname = new URL(primarySiteUrl).hostname;
+    const domains = await listMorningscoreDomains(apiKey);
+    await sleepMs(MORNINGSCORE_REQUEST_GAP_MS);
+    const resolved = resolveDomainIdFromHostname(domains, hostname);
+    if (!resolved) {
+      throw new Error(
+        `No Morningscore domain matches ${hostname}. Set MORNINGSCORE_DOMAIN_ID or add the site in Morningscore.`
+      );
+    }
 
-  if (resolvedDomainIdCache.size > 64) {
-    for (const [key, entry] of resolvedDomainIdCache) {
-      if (entry.expiresAt <= now) {
-        resolvedDomainIdCache.delete(key);
+    const ts = Date.now();
+    resolvedDomainIdCache.set(cacheKey, { domainId: resolved, expiresAt: ts + RESOLVED_DOMAIN_ID_TTL_MS });
+
+    if (resolvedDomainIdCache.size > 64) {
+      for (const [key, entry] of resolvedDomainIdCache) {
+        if (entry.expiresAt <= ts) {
+          resolvedDomainIdCache.delete(key);
+        }
       }
     }
-  }
 
-  return resolved;
+    return resolved;
+  })().finally(() => {
+    resolvedDomainIdInflight.delete(cacheKey);
+  });
+
+  resolvedDomainIdInflight.set(cacheKey, resolution);
+  return resolution;
 }
 
 export async function fetchMorningscoreKeywordPages(
@@ -177,7 +192,10 @@ export async function fetchMorningscoreKeywordPages(
       break;
     }
     collected.push(...batch);
-    if (batch.length < options.perPage || collected.length >= payload.total) {
+    // `payload.total` is advisory — Morningscore sometimes omits it. Only exit when the
+    // page was not full (last page) or when `total` is a real number we've reached.
+    const totalKnown = typeof payload.total === "number" && payload.total > 0;
+    if (batch.length < options.perPage || (totalKnown && collected.length >= payload.total)) {
       break;
     }
     page += 1;
