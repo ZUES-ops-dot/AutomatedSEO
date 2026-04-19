@@ -34,7 +34,7 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/node_modules/playwright ./node_modules/playwright
 COPY --from=builder /app/node_modules/playwright-core ./node_modules/playwright-core
 
-RUN npx playwright install chromium --with-deps \
+RUN node ./node_modules/playwright/cli.js install chromium --with-deps \
   && rm -rf /root/.npm/_cacache
 
 EXPOSE 3000
