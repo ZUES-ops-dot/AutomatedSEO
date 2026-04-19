@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import type { KeywordGapReport } from "@/features/seo/server/keyword-gaps";
 import type { LongFormArticle } from "@/features/seo/server/long-form-generator";
+import { paragraphWithInlineLinks } from "@/components/content/inline-internal-links";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
 
@@ -364,7 +365,9 @@ export function LongFormGenerator() {
                 <h3 className="text-base font-semibold text-cyan-200">{section.heading}</h3>
                 <div className="space-y-2 text-sm leading-relaxed text-white/75">
                   {section.paragraphs.map((paragraph, paragraphIndex) => (
-                    <p key={paragraphIndex}>{paragraph}</p>
+                    <p key={paragraphIndex}>
+                      {paragraphWithInlineLinks(paragraph, section.internalLinks, `sec-${sectionIndex}-p-${paragraphIndex}`)}
+                    </p>
                   ))}
                 </div>
 
@@ -372,7 +375,7 @@ export function LongFormGenerator() {
                   <div className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.04] p-3">
                     <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-cyan-200">
                       <LinkIcon className="h-3.5 w-3.5" />
-                      Suggested internal links for this section
+                      Link list (anchors also appear inline above when the phrase matches)
                     </p>
                     <ul className="space-y-1.5">
                       {section.internalLinks.map((link, linkIndex) => (

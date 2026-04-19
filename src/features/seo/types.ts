@@ -112,7 +112,7 @@ export interface JobRun {
   id: string;
   name: string;
   cadence: string;
-  status: "healthy" | "warning" | "paused";
+  status: "healthy" | "warning" | "paused" | "error";
   lastRun: string;
   nextRun: string;
   detail: string;

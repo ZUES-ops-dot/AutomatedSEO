@@ -101,6 +101,17 @@ Replaces Google Search Console and GA4 for this app: keyword rankings, estimated
 
 **Rate limits:** about 2 requests per second (see Morningscore docs). Sync batches keyword pages with a short delay between calls.
 
+### Site crawl & Playwright (blog / rendered pages)
+
+Framer and similar sites need a **headless browser** for full HTML. The app uses **Playwright Chromium**.
+
+- **Docker / Railway (this repo):** The `Dockerfile` **runner** image is Debian-based and runs `npx playwright install chromium --with-deps` at build time. Redeploy after pulling the updated Dockerfile so the browser binary exists in the image.
+- **Local dev:** After `npm install`, run once:
+  ```bash
+  npx playwright install chromium
+  ```
+  Without this, crawls fall back to plain HTTP fetch (often **0 blog pages** for client-rendered sites), and dashboard “Activity” may show blog crawl errors.
+
 ---
 
 ## Database & Caching

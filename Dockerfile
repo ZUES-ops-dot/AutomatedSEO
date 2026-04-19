@@ -1,40 +1,44 @@
 # Multi-stage build for Next.js app
 FROM node:22-alpine AS base
 
-# Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-
-# Install dependencies
 COPY package.json package-lock.json* ./
 RUN npm install
 
-# Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Production image, copy all the files and run next
-FROM base AS runner
+# Production: Debian-based image — Playwright Chromium does not support Alpine/musl.
+# https://playwright.dev/docs/docker
+FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+# Install browsers to a fixed path (matches Playwright defaults under Linux)
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-# Copy standalone output
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Expose port
-EXPOSE 3000
+# Standalone bundle may omit optional deps from tracing; copy Playwright packages from builder.
+COPY --from=builder /app/node_modules/playwright ./node_modules/playwright
+COPY --from=builder /app/node_modules/playwright-core ./node_modules/playwright-core
 
+RUN npx playwright install chromium --with-deps \
+  && rm -rf /root/.npm/_cacache
+
+EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Start the standalone server
 CMD ["node", "server.js"]

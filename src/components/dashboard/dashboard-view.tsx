@@ -104,12 +104,18 @@ export function DashboardView({ data }: DashboardViewProps) {
     href?: string;
     isExternal?: boolean;
   }> = [
-    ...cycleSteps.slice(0, 2).map((job) => ({
+    ...cycleSteps.slice(0, 4).map((job) => ({
       id: `job-${job.id}`,
       title: job.name,
       detail: job.detail,
       time: job.lastRun,
-      tone: (job.status === "healthy" ? "success" : job.status === "warning" ? "warning" : "muted") as "success" | "warning" | "muted"
+      tone: (job.status === "healthy"
+        ? "success"
+        : job.status === "warning"
+          ? "warning"
+          : job.status === "error"
+            ? "danger"
+            : "muted") as "success" | "warning" | "danger" | "muted"
     })),
     ...pagesNeedingAttention.slice(0, 5).map((page) => ({
       id: `page-${page.id}`,
@@ -232,7 +238,14 @@ export function DashboardView({ data }: DashboardViewProps) {
         >
           <div className="space-y-0">
             {cycleSteps.map((job, index) => {
-              const statusTone = job.status === "healthy" ? "done" : job.status === "warning" ? "running" : "pending";
+              const statusTone =
+                job.status === "healthy"
+                  ? "done"
+                  : job.status === "error"
+                    ? "failed"
+                    : job.status === "warning"
+                      ? "running"
+                      : "pending";
 
               return (
                 <div key={job.id} className="relative flex items-center gap-3 py-2.5 last:pb-0">
@@ -243,16 +256,25 @@ export function DashboardView({ data }: DashboardViewProps) {
                     "mono relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[10px]",
                     statusTone === "done" && "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
                     statusTone === "running" && "border-cyan-400/20 bg-cyan-400/10 text-cyan-300",
+                    statusTone === "failed" && "border-rose-400/30 bg-rose-400/10 text-rose-300",
                     statusTone === "pending" && "border-white/[0.08] bg-white/[0.03] text-white/25"
                   )}>
-                    {statusTone === "done" ? <Check className="h-3.5 w-3.5" /> : statusTone === "running" ? <Clock3 className="h-3.5 w-3.5" /> : index + 1}
+                    {statusTone === "done" ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : statusTone === "running" ? (
+                      <Clock3 className="h-3.5 w-3.5" />
+                    ) : statusTone === "failed" ? (
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                    ) : (
+                      index + 1
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-semibold text-white">{job.name}</p>
                     <p className="mono text-[10.5px] text-white/38">{formatRelativeTime(job.lastRun)}</p>
                   </div>
-                  <Badge tone={statusTone === "done" ? "lime" : statusTone === "running" ? "cyan" : "slate"}>
-                    {statusTone}
+                  <Badge tone={statusTone === "done" ? "lime" : statusTone === "running" ? "cyan" : statusTone === "failed" ? "rose" : "slate"}>
+                    {statusTone === "failed" ? "error" : statusTone}
                   </Badge>
                 </div>
               );

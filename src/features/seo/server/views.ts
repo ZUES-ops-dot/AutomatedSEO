@@ -110,11 +110,20 @@ function groupSearchRowsByDay(rows: Awaited<ReturnType<typeof getSearchPerforman
 }
 
 function toJobRuns(runs: Awaited<ReturnType<typeof getConnectorRuns>>): JobRun[] {
-  return runs.slice(0, VIEW_LIMITS.jobRunsPreview).map((run) => ({
+  const sorted = [...runs].sort((a, b) => {
+    const err = Number(b.status === "error") - Number(a.status === "error");
+    if (err !== 0) {
+      return err;
+    }
+    return Date.parse(b.finishedAt) - Date.parse(a.finishedAt);
+  });
+
+  return sorted.slice(0, VIEW_LIMITS.jobRunsPreview).map((run) => ({
     id: run.id,
     name: `${titleCase(run.connectorId)} job`,
     cadence: String(run.metadata.cadence ?? "On demand"),
-    status: run.status === "success" ? "healthy" : run.status === "fallback" ? "warning" : "paused",
+    status:
+      run.status === "success" ? "healthy" : run.status === "fallback" ? "warning" : run.status === "error" ? "error" : "paused",
     lastRun: run.finishedAt,
     nextRun: run.status === "error" ? "Needs retry" : "Awaiting next trigger",
     detail: run.detail

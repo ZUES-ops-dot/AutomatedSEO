@@ -184,26 +184,34 @@ export async function createRenderedExtractionSession(): Promise<RenderedExtract
     return null;
   }
 
-  const browser = await chromium.launch({ headless: true });
-  const context = browser.newContext ? await browser.newContext() : null;
+  try {
+    const browser = await chromium.launch({ headless: true });
+    const context = browser.newContext ? await browser.newContext() : null;
 
-  return {
-    newPage: async () => {
-      if (context) {
-        return context.newPage();
+    return {
+      newPage: async () => {
+        if (context) {
+          return context.newPage();
+        }
+        if (!browser.newPage) {
+          throw new Error("Playwright browser instance cannot create pages.");
+        }
+        return browser.newPage();
+      },
+      close: async () => {
+        if (context) {
+          await context.close().catch(() => undefined);
+        }
+        await browser.close().catch(() => undefined);
       }
-      if (!browser.newPage) {
-        throw new Error("Playwright browser instance cannot create pages.");
-      }
-      return browser.newPage();
-    },
-    close: async () => {
-      if (context) {
-        await context.close().catch(() => undefined);
-      }
-      await browser.close().catch(() => undefined);
-    }
-  };
+    };
+  } catch (error) {
+    logSeoEvent("warn", "Playwright browser launch failed; crawl will use static HTML fetch only.", {
+      error: String(error),
+      hint: "In Docker/Railway run: npx playwright install chromium (see Dockerfile runner stage)."
+    });
+    return null;
+  }
 }
 
 async function extractWithPlaywright(url: string, baseUrl: string, renderedSession?: RenderedExtractionSession | null) {
