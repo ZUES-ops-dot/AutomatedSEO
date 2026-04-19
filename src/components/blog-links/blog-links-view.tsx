@@ -136,11 +136,26 @@ export function BlogLinksView({ blogSiteUrl }: BlogLinksViewProps) {
         },
         body: JSON.stringify({ job: "crawl" })
       });
-      const result = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string;
+        result?: Array<{ pages?: unknown[]; run?: { metadata?: { site?: string } } }>;
+      };
       if (!response.ok) {
         throw new Error(result.error ?? "Crawl failed.");
       }
-      setCrawlMessage(result.message ?? "Crawl completed.");
+      const crawlResults = Array.isArray(result.result) ? result.result : [];
+      const blog = crawlResults.find((r) => r?.run?.metadata?.site === "blog");
+      const blogCount = blog?.pages?.length;
+      if (typeof blogCount === "number") {
+        setCrawlMessage(
+          blogCount > 0
+            ? `Crawl finished: ${blogCount} blog page(s) indexed. Refresh the list below.`
+            : `Crawl finished but 0 blog pages were indexed. Check Playwright on the server, sitemap at ${blogHost}/sitemap.xml, and BLOG_SITE_URL / BLOG_URL_PATH_PREFIX.`
+        );
+      } else {
+        setCrawlMessage(result.message ?? "Crawl completed.");
+      }
       await loadList();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Crawl failed.");

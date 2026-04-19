@@ -1,6 +1,6 @@
 import { appEnv } from "@/features/seo/server/env";
 import { createRenderedExtractionSession, extractPageSnapshot, isInternalUrl, normalizeUrl, type RenderedExtractionSession } from "@/features/seo/server/crawl-extractor";
-import { CRAWL_LIMITS } from "@/features/seo/server/seo-constants";
+import { CRAWL_LIMITS, HTTP_CLIENT } from "@/features/seo/server/seo-constants";
 import { saveConnectorRun, saveSitePages } from "@/features/seo/server/storage";
 import type { ConnectorRun, SitePage, SiteScope } from "@/features/seo/types";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
@@ -82,56 +82,110 @@ function buildIssues(page: Pick<SitePage, "title" | "h1" | "metaDescription" | "
 const CRAWLER_USER_AGENT =
   "Mozilla/5.0 (compatible; QubicSEOAutopilot/1.0; +https://qubic.org) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-async function fetchSitemapUrls(baseUrl: string, pathFilter?: string) {
-  const sitemapUrl = `${baseUrl.replace(/\/$/, "")}/sitemap.xml`;
-  try {
-    const response = await fetchWithTimeout(sitemapUrl, {
-      headers: {
-        "user-agent": CRAWLER_USER_AGENT,
-        accept: "application/xml,text/xml,*/*;q=0.8"
-      },
-      cache: "no-store"
-    });
+function classifySitemapRoot(xml: string): "index" | "urlset" {
+  return /<sitemapindex[\s>]/i.test(xml) ? "index" : "urlset";
+}
 
-    if (!response.ok) {
-      logSeoEvent("warn", "Sitemap fetch returned non-OK status.", {
-        sitemapUrl,
-        status: response.status,
-        statusText: response.statusText
-      });
-      return [];
+/**
+ * Follows sitemap indexes (nested `<loc>` child sitemaps) then collects page `<loc>` entries.
+ * A flat `/sitemap.xml` that is only a urlset still works as before.
+ */
+async function fetchSitemapUrls(baseUrl: string, pathFilter?: string) {
+  const rootSitemap = `${baseUrl.replace(/\/$/, "")}/sitemap.xml`;
+  const queue: string[] = [rootSitemap];
+  const seenSitemaps = new Set<string>();
+  const pageUrls = new Set<string>();
+  let fetches = 0;
+
+  try {
+    while (queue.length > 0 && fetches < CRAWL_LIMITS.maxSitemapDocuments) {
+      const rawUrl = queue.shift();
+      if (!rawUrl) {
+        break;
+      }
+      const sitemapUrl = normalizeUrl(rawUrl.trim());
+      if (seenSitemaps.has(sitemapUrl)) {
+        continue;
+      }
+      seenSitemaps.add(sitemapUrl);
+      fetches++;
+
+      let response: Awaited<ReturnType<typeof fetchWithTimeout>>;
+      try {
+        response = await fetchWithTimeout(
+          sitemapUrl,
+          {
+            headers: {
+              "user-agent": CRAWLER_USER_AGENT,
+              accept: "application/xml,text/xml,*/*;q=0.8"
+            },
+            cache: "no-store"
+          },
+          HTTP_CLIENT.defaultTimeoutMs
+        );
+      } catch (error) {
+        logSeoEvent("warn", "Sitemap fetch failed.", {
+          sitemapUrl,
+          error: error instanceof Error ? error.message : String(error)
+        });
+        continue;
+      }
+
+      if (!response.ok) {
+        logSeoEvent("warn", "Sitemap fetch returned non-OK status.", {
+          sitemapUrl,
+          status: response.status,
+          statusText: response.statusText
+        });
+        continue;
+      }
+
+      const xml = await response.text();
+      const kind = classifySitemapRoot(xml);
+      const locs = Array.from(xml.matchAll(/<loc>([\s\S]*?)<\/loc>/gi))
+        .map((m) => normalizeUrl(m[1].trim()))
+        .filter(Boolean);
+
+      if (kind === "index") {
+        for (const loc of locs) {
+          if (isInternalUrl(loc, baseUrl) && !seenSitemaps.has(loc)) {
+            queue.push(loc);
+          }
+        }
+      } else {
+        for (const loc of locs) {
+          if (isInternalUrl(loc, baseUrl)) {
+            pageUrls.add(loc);
+          }
+        }
+      }
     }
 
-    const xml = await response.text();
-    const matches = xml.matchAll(/<loc>([\s\S]*?)<\/loc>/gi);
-
-    const all = Array.from(matches)
-      .map((match) => normalizeUrl(match[1].trim()))
-      .filter((url) => isInternalUrl(url, baseUrl));
-
+    const all = Array.from(pageUrls);
     const filtered = pathFilter
       ? all.filter((url) => {
           try {
-            return new URL(url).pathname.startsWith(pathFilter);
+            const pathname = new URL(url).pathname;
+            return pathname === pathFilter || pathname.startsWith(`${pathFilter}/`);
           } catch {
             return false;
           }
         })
       : all;
 
-    logSeoEvent("info", "Sitemap fetched successfully.", {
-      sitemapUrl,
-      totalUrls: all.length,
+    logSeoEvent("info", "Sitemap crawl completed.", {
+      rootSitemap,
+      sitemapDocumentsRead: fetches,
+      totalPageUrls: all.length,
       filteredUrls: filtered.length,
       pathFilter: pathFilter ?? null
     });
 
     return filtered.slice(0, defaultMaxPages * 2);
   } catch (error) {
-    logSeoEvent("warn", "Sitemap fetch failed.", {
-      sitemapUrl,
-      error: error instanceof Error ? error.message : String(error),
-      cause: error instanceof Error && "cause" in error ? String((error as Error & { cause?: unknown }).cause) : undefined
+    logSeoEvent("warn", "Sitemap discovery failed.", {
+      rootSitemap,
+      error: error instanceof Error ? error.message : String(error)
     });
     return [];
   }
@@ -205,7 +259,8 @@ async function crawlSingleSite(site: SiteScope, maxPages: number, seedUrls?: str
   const matchesPathFilter = (url: string) => {
     if (!pathFilter) return true;
     try {
-      return new URL(url).pathname.startsWith(pathFilter);
+      const pathname = new URL(url).pathname;
+      return pathname === pathFilter || pathname.startsWith(`${pathFilter}/`);
     } catch {
       return false;
     }
@@ -218,12 +273,18 @@ async function crawlSingleSite(site: SiteScope, maxPages: number, seedUrls?: str
       site === "primary" || site === "blog" ? await createRenderedExtractionSession() : null;
     const discoveredSitemapUrls = await fetchSitemapUrls(baseUrl, pathFilter);
 
-    // For blog scope: if sitemap yielded any filtered URLs, use those as seeds
-    // rather than the bare root (which likely won't match pathFilter).
+    const pathPrefix = pathFilter?.replace(/\/+$/, "") ?? "";
+    const sectionListingSeeds =
+      pathPrefix.length > 0
+        ? [normalizeUrl(`${baseUrl.replace(/\/$/, "")}${pathPrefix.startsWith("/") ? pathPrefix : `/${pathPrefix}`}`)]
+        : [];
+
+    // User seeds first (e.g. pasted post URL on recrawl), then section listing, then home/sitemap URLs.
     const seedPool = [
+      ...(seedUrls ?? []).map(normalizeUrl),
+      ...sectionListingSeeds,
       ...(pathFilter && discoveredSitemapUrls.length === 0 ? [normalizeUrl(baseUrl)] : []),
       ...(pathFilter ? [] : [normalizeUrl(baseUrl)]),
-      ...(seedUrls ?? []).map(normalizeUrl),
       ...discoveredSitemapUrls
     ];
 
@@ -298,7 +359,7 @@ async function crawlSingleSite(site: SiteScope, maxPages: number, seedUrls?: str
         site,
         baseUrl,
         maxPages,
-        rendered: site === "primary"
+        rendered: site === "primary" || site === "blog"
       }
     );
 
@@ -340,9 +401,11 @@ export async function crawlConfiguredSites(input: CrawlInput = {}) {
     return [await crawlSingleSite(input.site, maxPages, input.seedUrls)];
   }
 
+  const blogMaxPages = Math.max(maxPages, 48);
+
   return [
     await crawlSingleSite("primary", maxPages, input.seedUrls),
     await crawlSingleSite("docs", maxPages, input.seedUrls),
-    await crawlSingleSite("blog", maxPages, input.seedUrls)
+    await crawlSingleSite("blog", blogMaxPages, input.seedUrls)
   ];
 }

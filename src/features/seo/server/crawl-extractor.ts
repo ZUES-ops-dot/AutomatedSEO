@@ -112,9 +112,26 @@ export function isInternalUrl(candidate: string, baseUrl: string) {
   try {
     const parsed = new URL(candidate);
     const base = new URL(baseUrl);
-    return parsed.origin === base.origin;
+    const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+    const baseHost = base.hostname.replace(/^www\./i, "").toLowerCase();
+    return host === baseHost;
   } catch {
     return false;
+  }
+}
+
+/** Match crawled URL to a user-pasted URL despite www vs apex or trailing slash differences. */
+export function sameCanonicalPage(left: string, right: string) {
+  try {
+    const a = new URL(normalizeUrl(left));
+    const b = new URL(normalizeUrl(right));
+    const pathA = (a.pathname.replace(/\/+$/, "") || "/").toLowerCase();
+    const pathB = (b.pathname.replace(/\/+$/, "") || "/").toLowerCase();
+    const hostA = a.hostname.replace(/^www\./i, "").toLowerCase();
+    const hostB = b.hostname.replace(/^www\./i, "").toLowerCase();
+    return hostA === hostB && pathA === pathB;
+  } catch {
+    return normalizeUrl(left) === normalizeUrl(right);
   }
 }
 

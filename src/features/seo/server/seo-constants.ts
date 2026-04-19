@@ -26,7 +26,9 @@ export const VIEW_LIMITS = {
 
 export const CRAWL_LIMITS = {
   defaultMaxPages: 20,
-  pageIdSlugMaxLength: 96
+  pageIdSlugMaxLength: 96,
+  /** Cap recursive sitemap index fetches to avoid runaway queues. */
+  maxSitemapDocuments: 48
 } as const;
 
 export const SLUG_LIMITS = {

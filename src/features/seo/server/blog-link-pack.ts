@@ -1,4 +1,5 @@
-import { normalizeUrl } from "@/features/seo/server/crawl-extractor";
+import { normalizeUrl, sameCanonicalPage } from "@/features/seo/server/crawl-extractor";
+import { appEnv } from "@/features/seo/server/env";
 import { crawlConfiguredSites } from "@/features/seo/server/crawler";
 import { getSitePages } from "@/features/seo/server/storage";
 import type { InternalLinkAuditSuggestion, SitePage } from "@/features/seo/types";
@@ -171,8 +172,9 @@ export async function ensureBlogPagesIndexed(options: { recrawl?: boolean; maxPa
 
   // If caller specified seed URLs not yet in the index, crawl those so the
   // user-supplied target post gets fetched even without a full recrawl.
-  const existingUrls = new Set(existing.map((page) => normalizeUrl(page.url)));
-  const missingSeeds = seedUrls.filter((url) => !existingUrls.has(url));
+  const missingSeeds = seedUrls.filter(
+    (url) => !existing.some((page) => sameCanonicalPage(page.url, url))
+  );
   if (missingSeeds.length > 0) {
     await crawlConfiguredSites({
       site: "blog",
@@ -205,16 +207,22 @@ export async function buildBlogLinkPack(
 
   const allPages = await getSitePages();
   const blogPages = allPages.filter((p) => p.site === "blog");
-  const target = blogPages.find((p) => normalizeUrl(p.url) === normalized) ?? null;
+  const target = blogPages.find((p) => sameCanonicalPage(p.url, normalized)) ?? null;
 
   if (!target) {
+    const hostHint = (() => {
+      try {
+        return new URL(appEnv.blogSiteUrl).hostname;
+      } catch {
+        return "your blog host";
+      }
+    })();
     return {
       target: null,
       suggestions: [],
       blogPagesScanned: blogPages.length,
       crossSiteSuggestions: 0,
-      message:
-        "That URL is not in the blog crawl yet. Enable “Recrawl blog” and try again, or confirm the post is reachable on blogs.qubic.org."
+      message: `That URL is not in the blog crawl yet. Enable “Recrawl blog” and try again, or confirm the post is live under ${hostHint}${appEnv.blogUrlPathPrefix || ""}/….`
     };
   }
 

@@ -73,7 +73,8 @@ export const pageMeta: Record<string, { title: string; subtitle: string }> = {
   },
   "/blog-links": {
     title: "Blog internal links",
-    subtitle: "Search crawled posts on blogs.qubic.org, generate cross-links to other blogs and Qubic properties, and export a DOCX with embedded hyperlinks."
+    subtitle:
+      "Search crawled posts on qubic.org (blog-detail), generate cross-links to other posts and Qubic properties, and export a DOCX with embedded hyperlinks."
   },
   "/imports": {
     title: "Imports Center",
