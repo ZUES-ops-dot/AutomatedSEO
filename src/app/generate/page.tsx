@@ -1,5 +1,7 @@
 import { LongFormGenerator } from "@/components/content/long-form-generator";
 
-export default function GenerateContentPage() {
+export const dynamic = "force-dynamic";
+
+export default function GeneratePage() {
   return <LongFormGenerator />;
 }

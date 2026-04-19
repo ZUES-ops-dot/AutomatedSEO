@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Route } from "next";
 import { Gauge, LineChart, PlugZap, Radar, Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -27,8 +28,8 @@ const steps = [
     key: "produce",
     label: "Produce",
     hint: "Briefs → publish",
-    href: "/content",
-    paths: ["/content", "/blog-links"],
+    href: "/generate",
+    paths: ["/generate", "/blog-links"],
     Icon: Sparkles
   },
   {
@@ -71,7 +72,7 @@ export function SeoOpsPipeline({ className }: SeoOpsPipelineProps) {
           return (
             <Link
               key={step.key}
-              href={step.href}
+              href={step.href as Route}
               className={cn(
                 "group flex min-h-[72px] flex-col rounded-xl px-2.5 py-2.5 transition sm:px-3",
                 active

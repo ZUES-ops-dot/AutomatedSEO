@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import type { Route } from "next";
 import { AlertTriangle, Check, Clock3, Loader2, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -323,8 +324,8 @@ export function DashboardView({ data }: DashboardViewProps) {
         <Panel
           title="Content pipeline"
           action={
-            <Link href="/content" className="mono text-[11px] text-cyan-300 transition hover:text-cyan-200">
-              Open studio →
+            <Link href={"/generate" as Route} className="mono text-[11px] text-cyan-300 transition hover:text-cyan-200">
+              Generate draft →
             </Link>
           }
           contentClassName="px-5 pb-2 pt-4"

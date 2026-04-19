@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { FilePenLine, Files, LayoutDashboard, Link2, PlugZap, Radar, Sparkles } from "lucide-react";
+import { Files, LayoutDashboard, Link2, PlugZap, Radar, Sparkles } from "lucide-react";
 
 export interface NavigationItem {
   href: Route;
@@ -23,13 +23,7 @@ export const navigationItems: NavigationItem[] = [
     subtitle: "Prioritized queue"
   },
   {
-    href: "/content",
-    label: "Content Studio",
-    icon: FilePenLine,
-    subtitle: "Brief → draft → ship"
-  },
-  {
-    href: "/content/generate" as Route,
+    href: "/generate" as Route,
     label: "Generate",
     icon: Sparkles,
     subtitle: "2500+ word blog + links"
@@ -63,11 +57,7 @@ export const pageMeta: Record<string, { title: string; subtitle: string }> = {
     title: "Suggestions Inbox",
     subtitle: "Prioritized opportunities from search, crawl, and feeds—approve or snooze before production."
   },
-  "/content": {
-    title: "Content Studio",
-    subtitle: "Source packs → briefs → drafts → export or GitHub publish, with links and performance snapshots."
-  },
-  "/content/generate": {
+  "/generate": {
     title: "Generate Long-Form Article",
     subtitle: "Enter a topic and generate a 2500+ word blog post with embedded internal links. Export as DOCX for review."
   },
