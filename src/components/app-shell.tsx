@@ -134,7 +134,7 @@ export function AppShell({ children, stats }: AppShellProps) {
               <p className="text-[15px] font-bold tracking-[-0.02em] text-white">
                 Qubic <span className="text-cyan-300">SEO</span>
               </p>
-              <p className="mono truncate text-[10px] tracking-[0.08em] text-white/40">Autopilot v2.1</p>
+              <p className="mono truncate text-[10px] tracking-[0.08em] text-white/40">Copilot v2.1</p>
             </div>
           </Link>
         </div>
@@ -189,7 +189,7 @@ export function AppShell({ children, stats }: AppShellProps) {
         <div className="mt-auto border-t border-white/[0.07] px-5 pt-4">
           <div className="mb-3 flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(0,255,136,0.8)]" />
-            <span className="mono text-[11px] text-white/45">Autopilot running</span>
+            <span className="mono text-[11px] text-white/45">Copilot running</span>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             <StatPill label="Opps" value={stats.opportunityCount} />
@@ -308,7 +308,7 @@ export function AppShell({ children, stats }: AppShellProps) {
                     <p className="text-[15px] font-bold tracking-[-0.02em] text-white">
                       Qubic <span className="text-cyan-300">SEO</span>
                     </p>
-                    <p className="mono truncate text-[10px] tracking-[0.08em] text-white/40">Autopilot v2.1</p>
+                    <p className="mono truncate text-[10px] tracking-[0.08em] text-white/40">Copilot v2.1</p>
                   </div>
                 </Link>
                 <button
@@ -364,7 +364,7 @@ export function AppShell({ children, stats }: AppShellProps) {
               <div className="border-t border-white/[0.07] px-5 pt-4">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(0,255,136,0.8)]" />
-                  <span className="mono text-[11px] text-white/45">Autopilot running</span>
+                  <span className="mono text-[11px] text-white/45">Copilot running</span>
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
                   <StatPill label="Opps" value={stats.opportunityCount} />

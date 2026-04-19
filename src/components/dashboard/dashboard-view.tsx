@@ -200,7 +200,7 @@ export function DashboardView({ data }: DashboardViewProps) {
         </Panel>
 
         <Panel
-          title="Autopilot cycle"
+          title="Copilot cycle"
           action={
             <Link href="/connectors" className="mono text-[11px] text-cyan-300 transition hover:text-cyan-200">
               Connectors →
@@ -332,7 +332,7 @@ export function DashboardView({ data }: DashboardViewProps) {
           <div className="space-y-0">
             {activityItems.length === 0 ? (
               <p className="text-[12px] text-white/40">
-                No activity yet. Run the autopilot cycle to populate job runs and page issues.
+                No activity yet. Run the copilot cycle to populate job runs and page issues.
               </p>
             ) : null}
             {activityItems.map((item) => (

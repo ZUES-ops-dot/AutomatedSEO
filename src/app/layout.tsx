@@ -19,7 +19,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata = {
-  title: "Qubic SEO Autopilot",
+  title: "Qubic SEO Copilot",
   description:
     "A Qubic-focused SEO command center for audits, suggestions, blog workflows, connector health, and CSV imports."
 };

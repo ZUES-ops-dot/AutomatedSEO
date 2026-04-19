@@ -244,7 +244,7 @@ const opportunityCandidates: OpportunityCandidate[] = [
     affectedUrls: ["https://qubic.org/blog-grid"],
     pageType: "blog",
     reason:
-      "The topic is broad, weakly differentiated, and off-strategy for an evidence-led single-site autopilot.",
+      "The topic is broad, weakly differentiated, and off-strategy for an evidence-led single-site copilot.",
     evidence: [
       "Competition is high and the upside is weak for Qubic-specific business goals.",
       "The content would rely on generic information with little first-party advantage.",

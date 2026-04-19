@@ -1,5 +1,5 @@
 const defaultEnv = {
-  NEXT_PUBLIC_APP_NAME: "Qubic SEO Autopilot",
+  NEXT_PUBLIC_APP_NAME: "Qubic SEO Copilot",
   PRIMARY_SITE_URL: "https://qubic.org",
   DOCS_SITE_URL: "https://docs.qubic.org",
   // Blog content lives under qubic.org/blog-detail/* (Framer site). The

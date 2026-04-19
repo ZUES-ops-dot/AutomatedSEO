@@ -50,7 +50,7 @@ export const navigationItems: NavigationItem[] = [
 
 export const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/": {
-    title: "Qubic SEO Autopilot",
+    title: "Qubic SEO Copilot",
     subtitle: "Monitor the loop: signals feeding the queue, content pipeline, and connector cadence."
   },
   "/suggestions": {
