@@ -364,7 +364,8 @@ async function callAnthropic(system: string, prompt: string) {
   );
 
   if (!response.ok) {
-    throw new Error(`Anthropic request failed with status ${response.status}.`);
+    const body = await response.text().catch(() => "");
+    throw new Error(`Anthropic request failed (${response.status}): ${body.slice(0, 300)}`);
   }
 
   const data = (await response.json()) as {
