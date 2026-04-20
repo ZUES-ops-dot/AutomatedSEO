@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import type { KeywordGapReport } from "@/features/seo/server/keyword-gaps";
 import type { LongFormArticle } from "@/features/seo/server/long-form-generator";
-import { paragraphWithInlineLinks } from "@/components/content/inline-internal-links";
+import { normalizePreviewText, paragraphWithInlineLinks } from "@/components/content/inline-internal-links";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
 
@@ -408,7 +408,7 @@ export function LongFormGenerator() {
               <h3 className="mb-2 text-sm font-semibold text-cyan-200">Conclusion</h3>
               <div className="space-y-2 text-sm leading-relaxed text-white/75">
                 {article.conclusion.map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
+                  <p key={index}>{normalizePreviewText(paragraph)}</p>
                 ))}
               </div>
             </div>
@@ -422,8 +422,8 @@ export function LongFormGenerator() {
                 <div className="space-y-3">
                   {article.faq.map((item, index) => (
                     <div key={index}>
-                      <p className="text-sm font-medium text-white/85">{item.question}</p>
-                      <p className="mt-1 text-sm text-white/65">{item.answer}</p>
+                      <p className="text-sm font-medium text-white/85">{normalizePreviewText(item.question)}</p>
+                      <p className="mt-1 text-sm text-white/65">{normalizePreviewText(item.answer)}</p>
                     </div>
                   ))}
                 </div>

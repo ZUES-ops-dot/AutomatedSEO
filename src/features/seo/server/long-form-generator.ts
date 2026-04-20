@@ -65,7 +65,7 @@ const OFFICIAL_RESEARCH_CONTEXT = `
 - The docs explicitly say readers should check qubic.org for the most up-to-date list.
 - The docs say a Qubic wallet is needed to store QUBIC.
 - The docs describe a seed as a 55-character lowercase string.
-- The docs describe a Qubic ID as a 60-character string derived from the seed.
+- The docs describe a Qubic ID as a 60-character uppercase string derived from the seed.
 - The docs direct users to wallet.qubic.org for wallet interaction and mention mobile wallet options on iOS and Android.
 - The docs reference explorer.qubic.org for additional network information.
 
@@ -527,7 +527,8 @@ async function buildArticleWithAnthropic(
       instructions: [
         `Produce at least ${sectionCount} H2 sections with 4 substantive paragraphs each.`,
         "For each section, propose 1-2 internal links chosen ONLY from the officialLinks list. For every internalLinks entry you output, the exact anchorText string MUST appear verbatim inside one of that section's paragraphs so the downstream DOCX builder can turn it into a clickable hyperlink. Do not put the anchor text only in the internalLinks array; weave it into the prose as natural sentence fragments.",
-        "Write grounded, operator-level paragraphs - NOT marketing copy. No empty superlatives. Prefer plain hyphens over em-dashes.",
+        "Write grounded, operator-level paragraphs - NOT marketing copy. No empty superlatives.",
+        "STRICT PUNCTUATION: never output em-dashes (U+2014) or en-dashes (U+2013). Use a plain hyphen-minus (-) wrapped in spaces instead. Never output smart quotes; use straight quotes only.",
         "Include an FAQ with 5-7 question/answer pairs.",
         "Keep metaTitle <= 60 chars and metaDescription <= 155 chars.",
         "Use only facts that are present in the verified official research context. If something is time-sensitive, phrase it carefully, such as 'the official docs list' or 'according to Qubic Docs'.",

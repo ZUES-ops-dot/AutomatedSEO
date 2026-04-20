@@ -6,21 +6,37 @@ export type InlineLink = { anchorText: string; targetUrl: string };
 
 type LinkWithIndex = InlineLink & { _i: number };
 
+/** Client-safe text normalizer: mirrors `normalizeDocxText` so the UI preview matches the DOCX. */
+export function normalizePreviewText(text: string): string {
+  if (typeof text !== "string") {
+    return "";
+  }
+  return text
+    .replace(/\u2014/g, " - ")
+    .replace(/\u2013/g, "-")
+    .replace(/\u2026/g, "...")
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+    .replace(/\u00A0/g, " ")
+    .replace(/[ \t]{2,}/g, " ");
+}
+
 /**
  * Renders paragraph text with suggested anchor phrases as inline links (left-to-right).
  */
 export function paragraphWithInlineLinks(paragraph: string, links: InlineLink[], keyPrefix: string): ReactNode {
+  const normalized = normalizePreviewText(paragraph);
   const pool: LinkWithIndex[] = links
-    .map((link, i) => ({ ...link, anchorText: link.anchorText.trim(), _i: i }))
+    .map((link, i) => ({ ...link, anchorText: normalizePreviewText(link.anchorText).trim(), _i: i }))
     .filter((link) => link.anchorText.length > 0);
 
   if (pool.length === 0) {
-    return paragraph;
+    return normalized;
   }
 
   const consumed = new Set<number>();
   const parts: ReactNode[] = [];
-  let rest = paragraph;
+  let rest = normalized;
   let guard = 0;
 
   while (rest.length > 0 && guard < 200) {
@@ -71,5 +87,5 @@ export function paragraphWithInlineLinks(paragraph: string, links: InlineLink[],
     rest = rest.slice(best.index + best.length);
   }
 
-  return parts.length > 0 ? parts : paragraph;
+  return parts.length > 0 ? parts : normalized;
 }
