@@ -9,7 +9,7 @@ const defaultEnv = {
   BLOG_URL_PATH_PREFIX: "/blog-detail",
   QUBIC_RPC_BASE_URL: "https://rpc.qubic.org",
   GDELT_QUERY: '"Qubic" OR qubic.org',
-  ANTHROPIC_MODEL: "claude-3-5-sonnet-20241022"
+  ANTHROPIC_MODEL: "claude-haiku-4-5"
 } as const;
 
 function readEnvValue(key: string, fallback = "") {
