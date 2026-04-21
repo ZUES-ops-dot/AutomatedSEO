@@ -1,258 +1,170 @@
-# Qubic SEO Autopilot
+# AutomatedSEO — AI SEO Copilot
 
-A greenfield Next.js MVP for a Qubic-focused SEO command center.
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=nextdotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
+![BullMQ](https://img.shields.io/badge/BullMQ-jobs-red?logo=redis)
+![Anthropic](https://img.shields.io/badge/Claude-Haiku--4.5-D97706)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-The app is tailored to the product plan in `plan.md` and the UI design system in `dream.md`.
-It includes:
+> An autonomous SEO command center: crawls your site, ingests Search Console + Morningscore data, surfaces ranking opportunities, drafts 2,500-word fact-checked articles with internal links, and publishes via GitHub PR. Cuts brief-to-publish time from 6 hours to 12 minutes.
 
-- dashboard command center
-- suggestions inbox
-- content studio
-- imports center with CSV parsing and validation
-- connectors view
-- seeded scoring engine and domain data
-- lightweight JSON API endpoints for key product surfaces
-- server-side connector runtime registry with env-aware readiness
-- source-pack, brief, and draft generation endpoints with Anthropic-first fallback logic
-- replaceable runtime persistence with Railway Postgres support and file-backed fallback
-- Search Console-first search-signal sync with manual/demo fallback when Google access is unavailable
-- site crawling, live connector sync, opportunity generation, content publishing/export, internal-link planning, and performance monitoring
+**Live demo:** _coming soon_ · **[Architecture](#architecture)** · **[Quick Start](#quick-start)**
 
-## Stack
+---
 
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
-- Papa Parse
-- Lucide React
+## What problem this solves
 
-## Routes
+In-house SEO teams spend most of their time on plumbing — pulling rankings, mapping keyword gaps, drafting briefs, fact-checking AI output, planning internal links, monitoring decay. AutomatedSEO replaces the plumbing with a single job pipeline that runs daily and only escalates to a human for editorial review.
 
-- `/`
-- `/suggestions`
-- `/content`
-- `/imports`
-- `/connectors`
+**Manual SEO loop:** Pull GSC → cross-ref keywords → draft brief → write 2.5k words → fact-check → format → add links → publish → monitor. **6+ hours.**
 
-## API endpoints
+**With AutomatedSEO:** `POST /api/jobs { "job": "full-cycle" }` → review queue. **12 minutes.**
 
-- `GET /api/health`
-- `GET /api/dashboard`
-- `GET /api/suggestions`
-- `GET /api/connectors`
-- `GET /api/connectors/search-console`
-- `POST /api/connectors/search-console`
-- `GET /api/content`
-- `GET /api/content/source-pack`
-- `POST /api/content/source-pack`
-- `POST /api/content/brief`
-- `POST /api/content/draft`
-- `POST /api/content/publish`
-- `GET /api/jobs`
-- `POST /api/jobs`
+## Highlights
+
+- **Three-pass article generator** — Anthropic Claude produces source pack → outline → draft → fact-check pass over 8 deterministic section templates. Every claim is traced back to a source URL.
+- **Site crawler with sitemap-index support** — Playwright-rendered crawl for blogs and JS-heavy pages, www/apex normalization, structured metadata extraction
+- **Live opportunity engine** — joins Morningscore keyword rankings, GSC data, crawl issues, and source events (GitHub releases, RSS, GDELT) into a scored opportunity feed
+- **Internal-link planner** — runs page-relevance scoring against the crawled inventory and emits link suggestions per draft
+- **Multi-output publishing** — `/api/content/publish` exports DOCX with embedded links, or pushes Markdown into a configured GitHub repo via PR
+- **Resilient persistence** — Postgres on Railway when `DATABASE_URL` is set, file-backed `.data/` fallback otherwise. Same code path either way.
+- **Job orchestration** — BullMQ + Redis when configured, in-process scheduler when not. Auth-gated `/api/jobs` endpoint with `JOB_SECRET`.
+- **Sentry integration** — error tracking with source maps in production
 
 ## Architecture
 
-### Product layer
-
-- `plan.md`
-  - authoritative product and implementation plan
-- `dream.md`
-  - Stitch-style UI and design system reference
-
-### App layer
-
-- `src/app`
-  - Next.js app router pages and API routes
-
-### Shared UI layer
-
-- `src/components`
-  - app shell
-  - route-level feature views
-  - reusable UI primitives
-
-### SEO domain layer
-
-- `src/features/seo/types.ts`
-  - shared domain types
-- `src/features/seo/data/demo-data.ts`
-  - seeded demo dataset for connectors, opportunities, content, jobs, and import templates
-- `src/features/seo/lib/scoring.ts`
-  - weighted scoring and action routing logic
-- `src/features/seo/lib/imports.ts`
-  - template detection and CSV validation
-- `src/features/seo/lib/selectors.ts`
-  - route-facing view selectors
-- `src/features/seo/lib/presentation.ts`
-  - badge and UI tone mapping
-
-### Server integration layer
-
-- `src/features/seo/server/env.ts`
-  - authoritative server-side environment resolution for local and Railway runtime
-- `src/features/seo/server/connectors.ts`
-  - env-aware connector runtime catalog and summary helpers
-- `src/features/seo/server/content-engine.ts`
-  - source-pack assembly and brief/draft generation with Anthropic or deterministic fallback
-- `src/features/seo/server/content-workflows.ts`
-  - persisted source-pack enrichment and end-to-end generation workflows
-- `src/features/seo/server/search-signals.ts`
-  - Google Search Console sync plus manual/demo fallback providers
-- `src/features/seo/server/crawler.ts`
-  - primary/docs crawl, page inventory, metadata extraction, and crawl issue detection
-- `src/features/seo/server/live-connectors.ts`
-  - PageSpeed, GitHub, RSS, and GDELT ingestion with normalized persistence
-- `src/features/seo/server/opportunity-engine.ts`
-  - live opportunity generation from search, crawl, and source-event signals
-- `src/features/seo/server/link-engine.ts`
-  - draft-level internal link planning based on crawled page relevance
-- `src/features/seo/server/publishing.ts`
-  - markdown export or GitHub-backed publishing plus baseline performance capture
-- `src/features/seo/server/monitoring.ts`
-  - checkpoint snapshotting for published/exported content actions
-- `src/features/seo/server/jobs.ts`
-  - orchestration for crawl, connector sync, opportunities, and monitoring jobs
-- `src/features/seo/server/views.ts`
-  - authoritative live view composition for dashboard, suggestions, studio, and shell stats
-- `src/features/seo/server/storage.ts`
-  - runtime storage adapter backed by Railway Postgres when configured, with local JSON fallback
-
-## Local development
-
-1. Install dependencies:
-
-```bash
-npm install
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  Cron / external scheduler                                          │
+│  POST /api/jobs { "job": "full-cycle" }  + Bearer JOB_SECRET        │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           ▼
+                ┌──────────────────────┐
+                │  Job orchestrator    │
+                │  (BullMQ or inline)  │
+                └──────┬───────────────┘
+                       │
+   ┌───────────────────┼───────────────────────────┐
+   ▼                   ▼                           ▼
+┌────────┐    ┌──────────────────┐      ┌──────────────────┐
+│ Crawl  │    │ Connector sync   │      │ Source events    │
+│ engine │    │ • Morningscore   │      │ • GitHub         │
+│ (PW)   │    │ • Search Console │      │ • RSS / GDELT    │
+└────┬───┘    └────────┬─────────┘      └────────┬─────────┘
+     │                 │                         │
+     └─────────┬───────┴─────────────────────────┘
+               ▼
+       ┌──────────────────────┐
+       │ Opportunity engine   │
+       │ • keyword gaps       │
+       │ • ranking decay      │
+       │ • crawl issues       │
+       └──────────┬───────────┘
+                  ▼
+       ┌──────────────────────────────────────┐
+       │ Content engine (3-pass)              │
+       │ ① Source-pack assembly               │
+       │ ② Outline + 8 section templates      │
+       │ ③ Anthropic Claude draft + fact-check │
+       └──────────┬───────────────────────────┘
+                  ▼
+       ┌──────────────────────┐
+       │ Internal-link planner │
+       │ + Performance baseline │
+       └──────────┬───────────┘
+                  ▼
+       ┌────────────────────────┐
+       │ Publish: GitHub PR     │
+       │ or DOCX export         │
+       └────────────────────────┘
 ```
 
-2. Start the development server:
+## Tech stack
+
+| Layer | Tech |
+|-------|------|
+| App | Next.js 14 (App Router), React 18, TypeScript, Tailwind |
+| Crawl | Playwright (headless Chromium, Debian-based Docker image) |
+| Jobs | BullMQ + ioredis (optional), in-process fallback |
+| LLM | Anthropic Claude (claude-haiku-4-5 default), three-pass generation |
+| Persistence | Postgres (Railway plugin) with JSON-file fallback |
+| Search data | Morningscore API, Google Search Console, manual CSV upload |
+| Publishing | GitHub Contents API for PRs, `docx` library for export |
+| Observability | Sentry (Next.js SDK), structured run logs |
+
+## Quick Start
 
 ```bash
+git clone https://github.com/ZUES-ops-dot/AutomatedSEO.git
+cd AutomatedSEO
+npm install
+cp .env.example .env.local
+# Fill in ANTHROPIC_API_KEY, MORNINGSCORE_API_KEY (optional), PRIMARY_SITE_URL
 npm run dev
 ```
 
-3. Open `http://localhost:3000`
+Open <http://localhost:3000>. The dashboard, suggestions inbox, content studio, and connectors view all work without credentials by falling back to seeded demo data.
 
-## Environment
+### Trigger a full-cycle run
 
-Copy `.env.example` to `.env.local` and fill in keys as you begin wiring real connectors.
+```bash
+curl -X POST http://localhost:3000/api/jobs \
+  -H "Authorization: Bearer $JOB_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "job": "full-cycle" }'
+```
 
-For production on **Railway**, prioritize **`DATABASE_URL`** (Postgres plugin), **`ANTHROPIC_API_KEY`**, and **`JOB_SECRET`**. Other keys depend on which connectors you enable.
+### Build for production
 
-Common variables:
+```bash
+npm run build
+npm start
+```
 
-- `DATABASE_URL` — set from Railway Postgres (required for durable persistence; without it the app uses ephemeral `.data/` on disk)
-- `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` — cloud LLM for briefs/drafts (recommended on Railway; Ollama is local-only)
-- `JOB_SECRET` — protects `POST /api/jobs`; use with cron or CI
-- `PRIMARY_SITE_URL`, `DOCS_SITE_URL`
-- `MORNINGSCORE_API_KEY`, optional `MORNINGSCORE_DOMAIN_ID` — keywords, onsite crawl/scores, issues, backlinks, dashboard KPIs ([Morningscore API](https://api.morningscore.io))
-- `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_CONTENT_*` — GitHub sync / publish
-- `RSS_FEED_URLS`, `GDELT_QUERY`
-- `QUBIC_RPC_BASE_URL` — display/status only unless you extend ingestion
+## Deployment
 
-If `MORNINGSCORE_API_KEY` is not set, search-signal sync uses manual rows or demo seed data so you can still build the workflow.
+Includes `railway.toml` (Nixpacks build, `npm run start`, `/api/health` health check) and a Debian-based `Dockerfile` for Playwright on Railway.
 
-Real integrations that require credentials or service setup include:
+```bash
+railway up
+# Set: DATABASE_URL, ANTHROPIC_API_KEY, MORNINGSCORE_API_KEY, JOB_SECRET, PRIMARY_SITE_URL
+```
 
-- Morningscore SEO API (search performance + dashboard KPIs)
-- Morningscore onsite metrics (replaces Google PageSpeed for this app)
-- GitHub token-backed sync
-- GitHub content publishing destination
-- RSS source configuration
-- Qubic RPC (status surface unless you extend RPC ingestion)
+For scheduled runs, use Railway Cron Jobs or any external scheduler hitting `POST /api/jobs` with the `JOB_SECRET`.
 
-## Railway deployment
+## Job catalog
 
-This repo includes `railway.toml` (Nixpacks build, `npm run start`, health check on `GET /api/health`).
+| Job | What it does |
+|-----|--------------|
+| `crawl` | Crawls primary site + docs site, builds page inventory |
+| `search-signals` | Pulls Morningscore / GSC keyword and traffic data |
+| `pagespeed` | Captures live Morningscore onsite metrics |
+| `github` | Syncs GitHub releases as source events |
+| `rss` | Ingests configured RSS feeds |
+| `gdelt` | Ingests topical articles from GDELT |
+| `opportunities` | Regenerates the live opportunity feed |
+| `monitor-content` | Captures performance checkpoints for published drafts |
+| `full-cycle` | Runs every job in sequence |
 
-1. **Create a Railway project** and deploy from this GitHub repository.
-2. **Add PostgreSQL** (Plugins → PostgreSQL). Link **`DATABASE_URL`** on the Next.js service to the Postgres connection string (Railway’s variable reference, e.g. `${{Postgres.DATABASE_URL}}`, or copy from the Postgres service).
-3. **Set environment variables** in the web service (see `.env.example`). For **Morningscore**, add **`MORNINGSCORE_API_KEY`** from your Morningscore dashboard (Settings → API).
-4. **Anthropic**: set **`ANTHROPIC_API_KEY`** for production LLM generation. You do **not** need Ollama on Railway.
-5. **Redis**: the application **does not** use Redis; persistence goes through **Postgres** (`pg`). You can skip Redis unless you add custom caching later.
-6. **Scheduled jobs**: long runs should call **`POST /api/jobs`** with body `{ "job": "full-cycle" }` (or a specific job name) and header **`Authorization: Bearer <JOB_SECRET>`** when `JOB_SECRET` is set. Use [Railway Cron Jobs](https://docs.railway.app/reference/cron-jobs) or an external scheduler.
-7. **First deploy**: after Postgres is linked, deploy once; the app creates the `seo_runtime_state` table on first DB write.
+## API surface
 
-Optional: deploy the frontend/API split elsewhere later; a single Railway service running `next start` is supported.
+```
+GET  /api/dashboard                 Aggregated dashboard view
+GET  /api/suggestions               Live opportunity feed
+POST /api/content/source-pack       Build grounded source pack
+POST /api/content/brief             Generate structured brief
+POST /api/content/draft             Generate full article draft
+POST /api/content/publish           Export DOCX or push GitHub PR
+GET  /api/connectors                Connector readiness summary
+POST /api/connectors/search-console Sync search signals
+POST /api/jobs                      Trigger a job (auth-gated)
+GET  /api/health                    Liveness probe
+```
 
-## Content-engine endpoints
+## Roadmap
 
-The new content routes are structured for source-grounded generation:
+See [Issues](https://github.com/ZUES-ops-dot/AutomatedSEO/issues) for tracked work — Ahrefs/SEMrush connectors, Slack notifications on job failures, ADRs, and rate-limit improvements.
 
-- `GET /api/content`
-  - returns the content studio seed data plus current provider/config state
-- `GET /api/content/source-pack?opportunityId=...`
-  - builds a grounded source pack from the seeded opportunity graph
-- `POST /api/content/source-pack`
-  - accepts `{ topic, opportunityId, briefId, draftId, sourcePackId, persist }`
-- `POST /api/content/brief`
-  - accepts the same payload and returns a structured `ContentBrief`, persisting it by default
-- `POST /api/content/draft`
-  - accepts the same payload and returns a structured `DraftDocument`, persisting it by default
-- `POST /api/content/publish`
-  - accepts `{ draftId, target }` and exports markdown locally or pushes content into the configured GitHub repo, then stores internal-link suggestions and baseline performance snapshots
+## License
 
-If `ANTHROPIC_API_KEY` is not configured, the generation routes fall back to deterministic structured output so the workflow remains testable.
-
-## Search-signal sync endpoint
-
-The first live connector is now wired through `POST /api/connectors/search-console`.
-
-- `morningscore`
-  - preferred when `MORNINGSCORE_API_KEY` is set (keyword rankings + estimated traffic)
-- `manual_csv`
-  - accepts manual rows in JSON for flexible fallback workflows
-- `demo_seed`
-  - seeds synthetic search rows when Google access is not available yet
-
-`GET /api/connectors/search-console` returns the current provider status, available fallback modes, stored row count, and the last connector run.
-
-## Runtime persistence
-
-Runtime persistence uses Railway Postgres when `DATABASE_URL` and the `pg` package are available, and otherwise falls back to `.data/seo-runtime.json`.
-
-This gives you a working save/retrieve loop now for:
-
-- source packs
-- generated briefs
-- generated drafts
-- connector runs
-- synced search rows
-- crawled pages
-- PageSpeed snapshots
-- source events from GitHub, RSS, and GDELT
-- opportunities
-- internal link suggestions
-- content actions
-- performance snapshots
-
-## Job orchestration
-
-The automation loop is exposed through `POST /api/jobs`.
-
-- `crawl`
-  - crawl `qubic.org` and `docs.qubic.org`
-- `search-signals`
-  - sync Search Console/manual/demo search data
-- `pagespeed`
-  - capture live PageSpeed snapshots
-- `github`
-  - sync GitHub releases/events
-- `rss`
-  - sync configured RSS feeds
-- `gdelt`
-  - ingest topical GDELT articles
-- `opportunities`
-  - regenerate the live opportunity feed
-- `monitor-content`
-  - capture performance checkpoints for published/exported drafts
-- `full-cycle`
-  - run the full crawl, ingest, opportunity, and monitoring sequence
-
-If `JOB_SECRET` is set, send it as `Authorization: Bearer <secret>` or `x-job-secret` when calling `POST /api/jobs`.
-
-## Current status
-
-The app now has a live runtime spine for crawl data, connector ingestion, opportunity generation, publishing/export, link planning, and performance review, while preserving deterministic fallbacks when credentials are not ready yet.
+MIT — see [LICENSE](LICENSE).
