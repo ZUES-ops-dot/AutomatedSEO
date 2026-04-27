@@ -37,3 +37,5 @@ export async function GET(request: NextRequest) {
     return catchToJsonError(error, "Health check failed.");
   }
 }
+// TODO: add uptime check for Redis and Postgres
+
