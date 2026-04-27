@@ -1,4 +1,4 @@
-# AutomatedSEO — AI SEO Copilot
+﻿# AutomatedSEO -- AI SEO Copilot
 
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
@@ -14,7 +14,7 @@
 
 ## What problem this solves
 
-In-house SEO teams spend most of their time on plumbing — pulling rankings, mapping keyword gaps, drafting briefs, fact-checking AI output, planning internal links, monitoring decay. AutomatedSEO replaces the plumbing with a single job pipeline that runs daily and only escalates to a human for editorial review.
+In-house SEO teams spend most of their time on plumbing -- pulling rankings, mapping keyword gaps, drafting briefs, fact-checking AI output, planning internal links, monitoring decay. AutomatedSEO replaces the plumbing with a single job pipeline that runs daily and only escalates to a human for editorial review.
 
 **Manual SEO loop:** Pull GSC → cross-ref keywords → draft brief → write 2.5k words → fact-check → format → add links → publish → monitor. **6+ hours.**
 
@@ -22,14 +22,14 @@ In-house SEO teams spend most of their time on plumbing — pulling rankings, ma
 
 ## Highlights
 
-- **Three-pass article generator** — Anthropic Claude produces source pack → outline → draft → fact-check pass over 8 deterministic section templates. Every claim is traced back to a source URL.
-- **Site crawler with sitemap-index support** — Playwright-rendered crawl for blogs and JS-heavy pages, www/apex normalization, structured metadata extraction
-- **Live opportunity engine** — joins Morningscore keyword rankings, GSC data, crawl issues, and source events (GitHub releases, RSS, GDELT) into a scored opportunity feed
-- **Internal-link planner** — runs page-relevance scoring against the crawled inventory and emits link suggestions per draft
-- **Multi-output publishing** — `/api/content/publish` exports DOCX with embedded links, or pushes Markdown into a configured GitHub repo via PR
-- **Resilient persistence** — Postgres on Railway when `DATABASE_URL` is set, file-backed `.data/` fallback otherwise. Same code path either way.
-- **Job orchestration** — BullMQ + Redis when configured, in-process scheduler when not. Auth-gated `/api/jobs` endpoint with `JOB_SECRET`.
-- **Sentry integration** — error tracking with source maps in production
+- **Three-pass article generator** -- Anthropic Claude produces source pack → outline → draft → fact-check pass over 8 deterministic section templates. Every claim is traced back to a source URL.
+- **Site crawler with sitemap-index support** -- Playwright-rendered crawl for blogs and JS-heavy pages, www/apex normalization, structured metadata extraction
+- **Live opportunity engine** -- joins Morningscore keyword rankings, GSC data, crawl issues, and source events (GitHub releases, RSS, GDELT) into a scored opportunity feed
+- **Internal-link planner** -- runs page-relevance scoring against the crawled inventory and emits link suggestions per draft
+- **Multi-output publishing** -- `/api/content/publish` exports DOCX with embedded links, or pushes Markdown into a configured GitHub repo via PR
+- **Resilient persistence** -- Postgres on Railway when `DATABASE_URL` is set, file-backed `.data/` fallback otherwise. Same code path either way.
+- **Job orchestration** -- BullMQ + Redis when configured, in-process scheduler when not. Auth-gated `/api/jobs` endpoint with `JOB_SECRET`.
+- **Sentry integration** -- error tracking with source maps in production
 
 ## Architecture
 
@@ -163,8 +163,8 @@ GET  /api/health                    Liveness probe
 
 ## Roadmap
 
-See [Issues](https://github.com/ZUES-ops-dot/AutomatedSEO/issues) for tracked work — Ahrefs/SEMrush connectors, Slack notifications on job failures, ADRs, and rate-limit improvements.
+See [Issues](https://github.com/ZUES-ops-dot/AutomatedSEO/issues) for tracked work -- Ahrefs/SEMrush connectors, Slack notifications on job failures, ADRs, and rate-limit improvements.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT -- see [LICENSE](LICENSE).

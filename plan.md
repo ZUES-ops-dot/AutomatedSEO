@@ -1,4 +1,4 @@
-# Qubic SEO Autopilot Plan
+﻿# Qubic SEO Autopilot Plan
 
 ## 1. Product Goal
 
@@ -1198,7 +1198,7 @@ That same pattern should power the SEO tool.
 
 ## Engineering phases
 
-### Phase 1 — Opportunity engine
+### Phase 1 -- Opportunity engine
 
 Build:
 
@@ -1211,7 +1211,7 @@ Deliverable:
 
 - top 25 prioritized actions with recommended format
 
-### Phase 2 — Draft engine
+### Phase 2 -- Draft engine
 
 Build:
 
@@ -1224,7 +1224,7 @@ Deliverable:
 
 - markdown drafts for refreshes, support pages, and relevant blogs
 
-### Phase 3 — Internal-link engine
+### Phase 3 -- Internal-link engine
 
 Build:
 
@@ -1236,7 +1236,7 @@ Deliverable:
 
 - link insertion plans for each new/refreshed page
 
-### Phase 4 — Publish + monitor
+### Phase 4 -- Publish + monitor
 
 Build:
 

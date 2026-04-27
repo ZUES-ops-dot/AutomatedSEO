@@ -395,7 +395,7 @@ export function LongFormGenerator() {
                           >
                             {link.anchorText}
                           </a>
-                          <span className="text-white/40"> — {link.reason}</span>
+                          <span className="text-white/40"> -- {link.reason}</span>
                         </li>
                       ))}
                     </ul>

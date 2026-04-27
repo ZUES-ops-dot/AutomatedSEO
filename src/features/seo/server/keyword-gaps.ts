@@ -4,10 +4,10 @@
  * Identifies search queries where the site has opportunity but isn't capturing
  * traffic. Two complementary analyses:
  *
- *  1. Ranking gaps — queries where the site already appears (has impressions)
+ *  1. Ranking gaps -- queries where the site already appears (has impressions)
  *     but ranks poorly (position > 20). These are refresh opportunities.
  *
- *  2. Topic gaps — AI-suggested related keywords the site should target
+ *  2. Topic gaps -- AI-suggested related keywords the site should target
  *     based on an input topic. Uses the existing site-page inventory to
  *     exclude keywords already well-covered.
  */
@@ -73,11 +73,11 @@ function computeRankingGaps(
 
       let reason: string;
       if (row.position > 30) {
-        reason = `Ranking #${Math.round(row.position)} for "${row.query}" with ${row.impressions} impressions — strong signal but weak capture.`;
+        reason = `Ranking #${Math.round(row.position)} for "${row.query}" with ${row.impressions} impressions -- strong signal but weak capture.`;
       } else if (row.ctr < 0.04) {
-        reason = `CTR ${(row.ctr * 100).toFixed(1)}% at position ${Math.round(row.position)} — title/meta likely underperforming.`;
+        reason = `CTR ${(row.ctr * 100).toFixed(1)}% at position ${Math.round(row.position)} -- title/meta likely underperforming.`;
       } else {
-        reason = `Position ${Math.round(row.position)} for "${row.query}" — room to move into top 10 with refresh.`;
+        reason = `Position ${Math.round(row.position)} for "${row.query}" -- room to move into top 10 with refresh.`;
       }
 
       return {
@@ -107,20 +107,20 @@ async function callAnthropicForTopicGaps(
     "You are an SEO keyword researcher for the Qubic blockchain ecosystem. " +
     "You identify search terms, long-tail keywords, and content topics that an existing site is NOT covering well. " +
     "Your suggestions should be specific, realistic, and reflect actual search behavior. " +
-    "Return ONLY valid JSON — no prose, no markdown fences, no comments.";
+    "Return ONLY valid JSON -- no prose, no markdown fences, no comments.";
 
   const userPrompt = JSON.stringify(
     {
       task: "Identify keyword gaps around a topic.",
       topic,
-      siteContext: "Qubic.org and docs.qubic.org — a feeless, tick-based L1 with useful-proof-of-work (repurposes mining for AI training).",
+      siteContext: "Qubic.org and docs.qubic.org -- a feeless, tick-based L1 with useful-proof-of-work (repurposes mining for AI training).",
       existingCoverage: existingPageTitles.slice(0, 40),
       instructions: [
         "Suggest 8-12 specific search terms/topics that are adjacent to the input topic but appear NOT to be covered in existingCoverage.",
-        "Focus on operator-level, developer-level, and investor-level queries — not generic marketing terms.",
+        "Focus on operator-level, developer-level, and investor-level queries -- not generic marketing terms.",
         "For each, infer the user intent (informational / transactional / navigational / comparison).",
         "Propose a specific angle that positions Qubic as the authoritative source.",
-        "Estimate difficulty — low (long-tail, specific), medium (moderate competition), high (broad, competitive)."
+        "Estimate difficulty -- low (long-tail, specific), medium (moderate competition), high (broad, competitive)."
       ],
       requiredShape: {
         keywords: [

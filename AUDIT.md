@@ -1,4 +1,4 @@
-# Codebase Audit + Research: Achieving Real SEO Results
+﻿# Codebase Audit + Research: Achieving Real SEO Results
 
 ## Part 1: Codebase Audit
 
@@ -6,20 +6,20 @@
 
 | Plan goal | Status | Gap |
 |---|---|---|
-| Weighted scoring engine (§8.4) | **Done** — `scoring.ts` implements all 9 dimensions, action routing, confidence score, and priority bands exactly as specified | None |
-| Action router: refresh / new_support_page / new_relevant_blog / merge / skip (§8.5–8.6) | **Done** — `decideAction()` implements all five decision paths with the correct boolean signal checks | None |
-| Source-grounded content generation (§10) | **Done** — source packs, briefs, drafts with `[HUMAN REQUIRED]` markers, Anthropic-first with deterministic fallback | None |
-| Search Console connector (§5.1) | **Partial** — JWT auth, query fetch, and persistence are wired, but no scheduled sync or historical accumulation yet | Needs cron + DB |
-| PageSpeed / CrUX connectors (§5.1) | **Not built** — connector entries exist in demo data but no fetch logic | Missing implementation |
-| GitHub connector (§5.1) | **Not built** — demo entry exists, no release/commit fetch | Missing implementation |
-| RSS / GDELT connectors (§5.2–5.3) | **Not built** — demo entries exist, no feed parsing or GDELT API call | Missing implementation |
-| Site crawl + snapshot pipeline (§3.1, §8.1) | **Not built** — demo connector entry only | Missing — this is critical for real SEO |
-| Internal link graph (§9.3) | **Not built** — no crawl, no link map, no suggestion logic | Missing |
-| Performance monitoring loop (§Monitoring loop) | **Not built** — no before/after tracking for published content | Missing |
-| Publishing / CMS push (§Publishing model) | **Not built** — drafts stay in file storage, no export or CMS integration | Missing |
-| Database persistence (§8.3) | **Partial** — file-backed `.data/seo-runtime.json` works but is not production-ready | Needs Railway Postgres |
-| Scheduled jobs / automation cadence (§12) | **Not built** — `jobRuns` in demo data are display-only, no real scheduler | Missing |
-| CSV import pipeline (§11) | **Partial** — templates and validation exist in UI, but imported rows don't feed the opportunity engine | Missing wiring |
+| Weighted scoring engine (§8.4) | **Done** -- `scoring.ts` implements all 9 dimensions, action routing, confidence score, and priority bands exactly as specified | None |
+| Action router: refresh / new_support_page / new_relevant_blog / merge / skip (§8.5–8.6) | **Done** -- `decideAction()` implements all five decision paths with the correct boolean signal checks | None |
+| Source-grounded content generation (§10) | **Done** -- source packs, briefs, drafts with `[HUMAN REQUIRED]` markers, Anthropic-first with deterministic fallback | None |
+| Search Console connector (§5.1) | **Partial** -- JWT auth, query fetch, and persistence are wired, but no scheduled sync or historical accumulation yet | Needs cron + DB |
+| PageSpeed / CrUX connectors (§5.1) | **Not built** -- connector entries exist in demo data but no fetch logic | Missing implementation |
+| GitHub connector (§5.1) | **Not built** -- demo entry exists, no release/commit fetch | Missing implementation |
+| RSS / GDELT connectors (§5.2–5.3) | **Not built** -- demo entries exist, no feed parsing or GDELT API call | Missing implementation |
+| Site crawl + snapshot pipeline (§3.1, §8.1) | **Not built** -- demo connector entry only | Missing -- this is critical for real SEO |
+| Internal link graph (§9.3) | **Not built** -- no crawl, no link map, no suggestion logic | Missing |
+| Performance monitoring loop (§Monitoring loop) | **Not built** -- no before/after tracking for published content | Missing |
+| Publishing / CMS push (§Publishing model) | **Not built** -- drafts stay in file storage, no export or CMS integration | Missing |
+| Database persistence (§8.3) | **Partial** -- file-backed `.data/seo-runtime.json` works but is not production-ready | Needs Railway Postgres |
+| Scheduled jobs / automation cadence (§12) | **Not built** -- `jobRuns` in demo data are display-only, no real scheduler | Missing |
+| CSV import pipeline (§11) | **Partial** -- templates and validation exist in UI, but imported rows don't feed the opportunity engine | Missing wiring |
 
 ### Good practices already followed
 
@@ -29,7 +29,7 @@
 - **Fallback-first**: content engine and search signals both degrade gracefully without API keys
 - **Type safety**: strict TypeScript throughout, clean domain types
 - **Source grounding**: briefs and drafts always reference their source pack and opportunity chain
-- **Human review gate**: no auto-publish, all drafts require review — matches §10.4 and §17
+- **Human review gate**: no auto-publish, all drafts require review -- matches §10.4 and §17
 - **dream.md alignment**: dark mode, operator language, evidence blocks, badge tones, panel hierarchy all match the design spec
 
 ### Issues found in the audit
@@ -46,7 +46,7 @@
 
 3. **Suggestions board changes are client-side only**
    - `SuggestionsBoard` uses `useState` for approve/snooze/dismiss
-   - Status changes disappear on page reload — not persisted
+   - Status changes disappear on page reload -- not persisted
 
 4. **Content ideas are static**
    - `contentIdeas` in demo data never grow from real signals
@@ -67,7 +67,7 @@
 
 ---
 
-## Part 2: Research — How to Achieve Each SEO Goal
+## Part 2: Research -- How to Achieve Each SEO Goal
 
 ### 1. Real live data flowing consistently
 
@@ -85,13 +85,13 @@ Railway supports two models for scheduled work:
 
 ```
 src/features/seo/server/jobs/
-  sync-search-console.ts    — daily: fetch GSC rows, upsert into DB
-  sync-pagespeed.ts         — daily: check priority URLs, store results
-  sync-github.ts            — hourly: poll releases for qubic/core
-  sync-rss.ts               — hourly: parse official feeds
-  sync-gdelt.ts             — hourly: query GDELT DOC 2.0 for "Qubic"
-  generate-opportunities.ts — daily: combine signals into scored candidates
-  detect-stale-content.ts   — weekly: flag pages with declining metrics
+  sync-search-console.ts    -- daily: fetch GSC rows, upsert into DB
+  sync-pagespeed.ts         -- daily: check priority URLs, store results
+  sync-github.ts            -- hourly: poll releases for qubic/core
+  sync-rss.ts               -- hourly: parse official feeds
+  sync-gdelt.ts             -- hourly: query GDELT DOC 2.0 for "Qubic"
+  generate-opportunities.ts -- daily: combine signals into scored candidates
+  detect-stale-content.ts   -- weekly: flag pages with declining metrics
 ```
 
 Each job would:
@@ -151,22 +151,22 @@ Each job would:
 **Step 3: Generate link suggestions**
 - Output: "Add a link from [source page] to [target page] with anchor text [suggested anchor]"
 - Attach these to the draft's review checklist
-- The plan already has an `internal_links` import template — imported link targets should feed into this system
+- The plan already has an `internal_links` import template -- imported link targets should feed into this system
 
 **Practical implementation**:
 ```
 src/features/seo/server/link-engine.ts
-  - buildPageInventory(crawlData)     — creates the link graph
-  - findLinkCandidates(draft, graph)  — suggests source→target pairs
-  - scoreLinkOpportunity(candidate)   — relevance + authority + structure
-  - generateLinkPlan(draft)           — returns a list of suggestions
+  - buildPageInventory(crawlData)     -- creates the link graph
+  - findLinkCandidates(draft, graph)  -- suggests source→target pairs
+  - scoreLinkOpportunity(candidate)   -- relevance + authority + structure
+  - generateLinkPlan(draft)           -- returns a list of suggestions
 ```
 
 Add a `linkSuggestions` field to `DraftDocument` and display them in the Content Studio detail view.
 
 ### 4. Performance review over time
 
-**What this means for SEO**: You need to know if your content actions actually worked — did impressions rise? Did CTR improve? Did the page start ranking?
+**What this means for SEO**: You need to know if your content actions actually worked -- did impressions rise? Did CTR improve? Did the page start ranking?
 
 **How to achieve it**:
 
@@ -193,9 +193,9 @@ Types:
   ContentAction { draftId, publishedAt, targetUrls, beforeSnapshot, afterSnapshots[] }
 
 Jobs:
-  snapshot-before-publish.ts  — runs when draft status changes to published
-  track-published-content.ts  — daily: refreshes metrics for recently published URLs
-  generate-win-loss-report.ts — weekly: compares before vs after
+  snapshot-before-publish.ts  -- runs when draft status changes to published
+  track-published-content.ts  -- daily: refreshes metrics for recently published URLs
+  generate-win-loss-report.ts -- weekly: compares before vs after
 ```
 
 Add a "Performance" tab to the Content Studio that shows before/after comparisons.
@@ -212,7 +212,7 @@ Railway provides managed Postgres. The migration path from file storage:
 2. Add Prisma or Drizzle as the ORM
 3. Define schema matching `SeoPersistenceState` + new tables for crawl data, page inventory, link graph, performance snapshots
 4. Replace `storage.ts` read/write functions with DB queries
-5. The API routes don't change — only the storage adapter changes
+5. The API routes don't change -- only the storage adapter changes
 
 **Recommended schema additions** (beyond current persistence):
 
@@ -229,11 +229,11 @@ Railway provides managed Postgres. The migration path from file storage:
 
 **Live connectors to build next** (in priority order):
 
-1. **PageSpeed Insights** — single `fetch` call per URL, free with API key, immediate value for performance suggestions
-2. **GitHub releases** — poll `https://api.github.com/repos/qubic/core/releases`, seed content ideas from changelogs
-3. **RSS watcher** — parse Atom/RSS feeds from official Qubic channels, detect freshness signals
-4. **GDELT DOC 2.0** — `GET https://api.gdeltproject.org/api/v2/doc/doc?query="Qubic"&mode=artlist&format=json`, free, no auth
-5. **Site crawl** — fetch + cheerio for HTML parsing, build page inventory and link graph
+1. **PageSpeed Insights** -- single `fetch` call per URL, free with API key, immediate value for performance suggestions
+2. **GitHub releases** -- poll `https://api.github.com/repos/qubic/core/releases`, seed content ideas from changelogs
+3. **RSS watcher** -- parse Atom/RSS feeds from official Qubic channels, detect freshness signals
+4. **GDELT DOC 2.0** -- `GET https://api.gdeltproject.org/api/v2/doc/doc?query="Qubic"&mode=artlist&format=json`, free, no auth
+5. **Site crawl** -- fetch + cheerio for HTML parsing, build page inventory and link graph
 
 ---
 
@@ -241,31 +241,31 @@ Railway provides managed Postgres. The migration path from file storage:
 
 Based on the audit and research, here's what to build next in order of SEO impact:
 
-### Tier 1 — Unblocks real SEO work
+### Tier 1 -- Unblocks real SEO work
 
-1. **Railway Postgres** — replace file storage so data survives deployments
-2. **Site crawl for qubic.org** — creates page inventory, enables link analysis and technical SEO detection
-3. **Opportunity generation from live signals** — turn Search Console rows + crawl findings into scored opportunities instead of only using demo data
+1. **Railway Postgres** -- replace file storage so data survives deployments
+2. **Site crawl for qubic.org** -- creates page inventory, enables link analysis and technical SEO detection
+3. **Opportunity generation from live signals** -- turn Search Console rows + crawl findings into scored opportunities instead of only using demo data
 
-### Tier 2 — Enables the content loop
+### Tier 2 -- Enables the content loop
 
-4. **GitHub publish action** — push approved drafts as PRs to the blog repo
-5. **Internal link engine** — suggest links for new and refreshed content
-6. **Performance snapshots** — before/after tracking for published content
+4. **GitHub publish action** -- push approved drafts as PRs to the blog repo
+5. **Internal link engine** -- suggest links for new and refreshed content
+6. **Performance snapshots** -- before/after tracking for published content
 
-### Tier 3 — Expands signal coverage
+### Tier 3 -- Expands signal coverage
 
-7. **PageSpeed connector** — performance-based suggestions
-8. **GitHub releases connector** — changelog-driven content ideas
-9. **RSS + GDELT connectors** — freshness and news-driven ideas
-10. **Railway cron service** — automated daily/hourly sync for all connectors
+7. **PageSpeed connector** -- performance-based suggestions
+8. **GitHub releases connector** -- changelog-driven content ideas
+9. **RSS + GDELT connectors** -- freshness and news-driven ideas
+10. **Railway cron service** -- automated daily/hourly sync for all connectors
 
-### Tier 4 — Closes the feedback loop
+### Tier 4 -- Closes the feedback loop
 
-11. **Win/loss reporting** — weekly comparison of published content vs baseline
-12. **Stale content detection** — flag pages with declining metrics for refresh
-13. **Opportunity status persistence** — approve/snooze/dismiss survives reload
-14. **Dashboard driven by live data** — metrics, trends, and job status from DB instead of hardcoded values
+11. **Win/loss reporting** -- weekly comparison of published content vs baseline
+12. **Stale content detection** -- flag pages with declining metrics for refresh
+13. **Opportunity status persistence** -- approve/snooze/dismiss survives reload
+14. **Dashboard driven by live data** -- metrics, trends, and job status from DB instead of hardcoded values
 
 ---
 

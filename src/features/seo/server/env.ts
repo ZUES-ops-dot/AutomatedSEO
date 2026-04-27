@@ -45,7 +45,7 @@ export const appEnv = {
   qubicRpcBaseUrl: getResolvedEnvValue("QUBIC_RPC_BASE_URL"),
   /** Bearer token from Morningscore → Settings → API. */
   morningscoreApiKey: readEnvFirst("MORNINGSCORE_API_KEY", "MORNINGSCORE_TOKEN", "MS_API_KEY"),
-  /** `global_domain_identifier` from GET /v1/domains — optional if hostname matches PRIMARY_SITE_URL. */
+  /** `global_domain_identifier` from GET /v1/domains -- optional if hostname matches PRIMARY_SITE_URL. */
   morningscoreDomainId: readEnvValue("MORNINGSCORE_DOMAIN_ID"),
   coingeckoApiKey: readEnvValue("COINGECKO_API_KEY"),
   gdeltQuery: getResolvedEnvValue("GDELT_QUERY"),

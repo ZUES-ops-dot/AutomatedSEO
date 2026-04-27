@@ -55,7 +55,7 @@ export const pageMeta: Record<string, { title: string; subtitle: string }> = {
   },
   "/suggestions": {
     title: "Suggestions Inbox",
-    subtitle: "Prioritized opportunities from search, crawl, and feeds—approve or snooze before production."
+    subtitle: "Prioritized opportunities from search, crawl, and feeds--approve or snooze before production."
   },
   "/generate": {
     title: "Generate Long-Form Article",

@@ -192,7 +192,7 @@ export async function fetchMorningscoreKeywordPages(
       break;
     }
     collected.push(...batch);
-    // `payload.total` is advisory — Morningscore sometimes omits it. Only exit when the
+    // `payload.total` is advisory -- Morningscore sometimes omits it. Only exit when the
     // page was not full (last page) or when `total` is a real number we've reached.
     const totalKnown = typeof payload.total === "number" && payload.total > 0;
     if (batch.length < options.perPage || (totalKnown && collected.length >= payload.total)) {

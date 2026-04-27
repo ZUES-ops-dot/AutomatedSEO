@@ -339,7 +339,7 @@ export const connectors: Connector[] = [
     name: "Morningscore Onsite",
     group: "google_signals",
     description:
-      "Derives per-URL onsite scores from Morningscore crawl (issues/tasks), including page-speed-related validators—no Google API.",
+      "Derives per-URL onsite scores from Morningscore crawl (issues/tasks), including page-speed-related validators--no Google API.",
     cadence: "Daily",
     status: "connected",
     healthScore: 88,

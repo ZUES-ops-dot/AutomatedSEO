@@ -1,4 +1,4 @@
-"""
+﻿"""
 MLM Guides and Manuals Generator
 1. Consolidate research into context
 2. Send each guide topic to Anthropic Claude API
@@ -23,7 +23,7 @@ RESEARCH_CONTEXT = (ROOT / "mlm_research_context.txt").read_text(encoding="utf-8
 
 GUIDE_TOPICS = [
     {
-        "title": "My Last Match — Complete Beginner's Guide",
+        "title": "My Last Match -- Complete Beginner's Guide",
         "filename": "MLM_Beginners_Guide.docx",
         "prompt": (
             "Write a comprehensive beginner's guide (1500-2000 words) for someone completely new to My Last Match (MLM) on the Qubic blockchain. "
@@ -34,7 +34,7 @@ GUIDE_TOPICS = [
         ),
     },
     {
-        "title": "Safehouses, Vehicles, and Assets — Owner's Manual",
+        "title": "Safehouses, Vehicles, and Assets -- Owner's Manual",
         "filename": "MLM_Assets_Owners_Manual.docx",
         "prompt": (
             "Write a detailed owner's manual (1500-2000 words) about assets in My Last Match (MLM). "
@@ -49,7 +49,7 @@ GUIDE_TOPICS = [
         ),
     },
     {
-        "title": "Trading and Economy — Complete Guide to QX and MLM Markets",
+        "title": "Trading and Economy -- Complete Guide to QX and MLM Markets",
         "filename": "MLM_Trading_Economy_Guide.docx",
         "prompt": (
             "Write a comprehensive trading and economy guide (1500-2000 words) for My Last Match (MLM) on Qubic. "
@@ -71,7 +71,7 @@ GUIDE_TOPICS = [
             "Cover: the game world (1990s post-apocalyptic setting, one unified world for up to 50,000 players, 50ms latency), "
             "the map (city centres, villages, forests, strategic locations), "
             "survival mechanics (resource management, diesel-only vehicles due to gasoline degradation), "
-            "psychological threats — mares (haunt darkness, drain sanity) and dementals (humans driven insane, attracted by light, retain rudimentary intelligence, valuable loot), "
+            "psychological threats -- mares (haunt darkness, drain sanity) and dementals (humans driven insane, attracted by light, retain rudimentary intelligence, valuable loot), "
             "the light vs darkness balance, "
             "PVP and PVE combat systems, "
             "crafting system (player-driven, community-contributed recipes, survival tools, portable shelters), "
@@ -112,7 +112,7 @@ def generate_guide_text(topic: dict, context: str) -> str:
         "in the Qubic blockchain ecosystem. Write clean, well-structured, authoritative content. "
         "Use markdown formatting with ## and ### headings, bullet lists, and bold for key terms. "
         "Include markdown links like [text](url) to relevant sources where appropriate. "
-        "Do not invent information — only use what is provided in the research context. "
+        "Do not invent information -- only use what is provided in the research context. "
         "Do not add disclaimers about not being financial advice unless specifically about trading."
     )
     user = (

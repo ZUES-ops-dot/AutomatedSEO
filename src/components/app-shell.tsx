@@ -102,7 +102,7 @@ export function AppShell({ children, stats }: AppShellProps) {
 
         setCycleBanner({
           ok: true,
-          text: parts.length > 0 ? `Cycle complete — ${parts.join(" • ")}` : "Cycle complete.",
+          text: parts.length > 0 ? `Cycle complete -- ${parts.join(" • ")}` : "Cycle complete.",
           findings: f
         });
         router.refresh();

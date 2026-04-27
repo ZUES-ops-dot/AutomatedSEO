@@ -109,7 +109,7 @@ export async function runSeoJobAction(job: JobName): Promise<RunJobResult> {
     });
 
     const messages: Record<JobName, string> = {
-      crawl: "Crawl completed — site pages updated.",
+      crawl: "Crawl completed -- site pages updated.",
       "internal-links": "Internal-link audit refreshed.",
       "search-signals": "Search signal rows refreshed.",
       pagespeed: "Morningscore onsite snapshots refreshed.",

@@ -1,4 +1,4 @@
-# Environment Variables Setup Guide (Railway Deployment)
+﻿# Environment Variables Setup Guide (Railway Deployment)
 
 This guide walks you through obtaining every API key and environment variable needed to deploy Qubic SEO Autopilot on Railway with both frontend and backend hosted there.
 
@@ -91,7 +91,7 @@ Replaces Google Search Console and GA4 for this app: keyword rankings, estimated
 1. Open [Morningscore](https://v3.morningscore.io) and add your website as a domain if needed.
 2. Go to **Settings → API** and create an API key (Bearer token).
 3. Set `MORNINGSCORE_API_KEY=<your-token>` in Railway or `.env.local`.
-4. **Railway:** Add the variable on the **same service** that runs the Next.js app (`next start`). Variables attached only to Postgres/Redis/Cron services are not visible to the web process—if the UI shows “Not loaded”, fix the service or name, then **redeploy**.
+4. **Railway:** Add the variable on the **same service** that runs the Next.js app (`next start`). Variables attached only to Postgres/Redis/Cron services are not visible to the web process--if the UI shows “Not loaded”, fix the service or name, then **redeploy**.
 5. **Aliases:** The app also reads `MORNINGSCORE_TOKEN` or `MS_API_KEY` if `MORNINGSCORE_API_KEY` is empty (useful when fixing naming mistakes).
 
 **`MORNINGSCORE_DOMAIN_ID`** (optional)
@@ -311,13 +311,13 @@ QUBIC_RPC_BASE_URL=https://rpc.qubic.org
 GDELT_QUERY="Qubic" OR qubic.org
 
 # =============================================================================
-# AI / LLM — Anthropic is required for Railway
+# AI / LLM -- Anthropic is required for Railway
 # =============================================================================
 ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
 ANTHROPIC_MODEL=claude-3-5-sonnet-latest
 
 # =============================================================================
-# Morningscore (optional — keywords, onsite, dashboard)
+# Morningscore (optional -- keywords, onsite, dashboard)
 # =============================================================================
 MORNINGSCORE_API_KEY=your-morningscore-bearer-token
 MORNINGSCORE_DOMAIN_ID=

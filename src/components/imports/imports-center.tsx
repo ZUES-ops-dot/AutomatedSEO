@@ -110,7 +110,7 @@ export function ImportsCenter() {
       >
         <div className="rounded-2xl border border-cyan-400/10 bg-cyan-400/[0.04] p-4">
           <p className="text-sm text-white/70">
-            <strong className="text-cyan-200">Why this exists:</strong> If you want to supplement Morningscore or work offline, you can import keyword and performance data from any source — Bing Webmaster exports, Ahrefs, SEMrush, or manual keyword lists. The app treats imported rows the same as synced API data.
+            <strong className="text-cyan-200">Why this exists:</strong> If you want to supplement Morningscore or work offline, you can import keyword and performance data from any source -- Bing Webmaster exports, Ahrefs, SEMrush, or manual keyword lists. The app treats imported rows the same as synced API data.
           </p>
         </div>
       </Panel>
@@ -277,7 +277,7 @@ export function ImportsCenter() {
                         <tr key={rowIndex} className="border-t border-white/10">
                           {preview.headers.map((header) => (
                             <td key={`${rowIndex}-${header}`} className="px-4 py-3 align-top text-slate-200">
-                              {row[header] || "—"}
+                              {row[header] || "--"}
                             </td>
                           ))}
                         </tr>

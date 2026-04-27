@@ -51,7 +51,7 @@ export function ConnectorsView({ groups, summary, runtimeEnv }: ConnectorsViewPr
         <motion.div variants={fadeUp}>
           <Panel
             title="Runtime environment (live)"
-            subtitle={`Evaluated on each request — shows what's actually loaded in this process. deployment=${runtimeEnv.deploymentTarget}, NODE_ENV=${runtimeEnv.nodeEnv}${runtimeEnv.railwayEnv ? `, RAILWAY_ENVIRONMENT_NAME=${runtimeEnv.railwayEnv}` : ""}`}
+            subtitle={`Evaluated on each request -- shows what's actually loaded in this process. deployment=${runtimeEnv.deploymentTarget}, NODE_ENV=${runtimeEnv.nodeEnv}${runtimeEnv.railwayEnv ? `, RAILWAY_ENVIRONMENT_NAME=${runtimeEnv.railwayEnv}` : ""}`}
           >
             <div className="grid gap-2 md:grid-cols-2">
               {runtimeEnv.checks.map((check) => (

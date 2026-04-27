@@ -438,7 +438,7 @@ function buildDeterministicArticle(
   ];
 
   const conclusion = [
-    `Taken together, the material in this article provides a complete operator view of ${topic} within the Qubic ecosystem. The key takeaway is that ${primaryKeyword} behaves predictably when you understand its underlying assumptions, and that Qubic's design choices — feeless transactions, useful proof-of-work, tick-based finality — create opportunities for patterns that would be impractical elsewhere.`,
+    `Taken together, the material in this article provides a complete operator view of ${topic} within the Qubic ecosystem. The key takeaway is that ${primaryKeyword} behaves predictably when you understand its underlying assumptions, and that Qubic's design choices -- feeless transactions, useful proof-of-work, tick-based finality -- create opportunities for patterns that would be impractical elsewhere.`,
     `Next steps: review the canonical documentation linked above, test your assumptions against current chain state using the RPC, and document your implementation decisions so future contributors can maintain and extend what you build. When in doubt, the Qubic community and official resources remain the authoritative source for ${topic}.`
   ];
 
@@ -462,7 +462,7 @@ function buildDeterministicArticle(
     topic,
     title: `${topic}: A Complete Guide for the Qubic Ecosystem`,
     metaTitle: `${topic} Guide | Qubic`.slice(0, 60),
-    metaDescription: `A complete guide to ${topic} on Qubic — architecture, use cases, and practical steps.`.slice(0, 155),
+    metaDescription: `A complete guide to ${topic} on Qubic -- architecture, use cases, and practical steps.`.slice(0, 155),
     introduction,
     sections,
     conclusion,
@@ -507,7 +507,7 @@ async function buildArticleWithAnthropic(
     "Do not infer convenience or security features that are not explicitly in the source context. " +
     "Use markdown headings, subheadings, bullets where helpful, and embed relevant official links. " +
     "Keep the tone authoritative and clear, not hype-driven or promotional. " +
-    "Return ONLY valid JSON matching the requested shape — no prose, no markdown outside JSON, no comments.";
+    "Return ONLY valid JSON matching the requested shape -- no prose, no markdown outside JSON, no comments.";
 
   const userPromptDraft = JSON.stringify(
     {
@@ -641,7 +641,7 @@ async function buildArticleWithAnthropic(
     "If a claim is not directly supported, remove it or soften it into a generic statement that does not assert unsupported facts. " +
     "Do not infer app security features, sync speed, seamless integrations, update cadence, wallet UX details, explorer feature lists, exchange/product behavior, governance beyond what is stated, regional availability, liquidity conditions, or future roadmap claims unless the verified context explicitly states them. " +
     "Preserve JSON structure, make the article strong and readable, and ensure the final output meets the target word count. " +
-    "Return ONLY valid JSON matching the requested shape — no prose, no markdown outside JSON, no comments.";
+    "Return ONLY valid JSON matching the requested shape -- no prose, no markdown outside JSON, no comments.";
 
   const userPromptFactCheck = JSON.stringify(
     {
@@ -763,7 +763,7 @@ async function buildArticleWithAnthropic(
     "If a sentence cannot be directly traced to the verified context, delete it or rewrite it into a clearly attributed statement such as 'According to Qubic Docs' or 'The About page states'. " +
     "Do not imply wallet features, explorer capabilities, market conditions, roadmap promises, governance mechanics beyond what is stated, performance side-effects, UX details, security guarantees, exchange workflows, or benefits that are not explicitly described in the verified context. " +
     "If the article is too long, cut speculative or repetitive sections first. If it is too short, add depth only by clarifying facts already present in the verified context. " +
-    "Return ONLY valid JSON matching the requested shape — no prose, no markdown outside JSON, no comments.";
+    "Return ONLY valid JSON matching the requested shape -- no prose, no markdown outside JSON, no comments.";
 
   const userPromptFinalize = JSON.stringify(
     {
