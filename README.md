@@ -94,6 +94,8 @@ In-house SEO teams spend most of their time on plumbing -- pulling rankings, map
 
 ## Quick Start
 
+> Requires Node.js 20+ and npm 10+.
+
 ```bash
 git clone https://github.com/ZUES-ops-dot/AutomatedSEO.git
 cd AutomatedSEO
